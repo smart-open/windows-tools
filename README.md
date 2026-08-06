@@ -13,8 +13,9 @@ scripts/
 ├── windows/                     # Windows 脚本目录
 │   ├── Window Beyond Compare重置试用.bat  # BC试用期重置
 │   ├── Window微信多开.bat                  # 微信多开工具
+│   ├── Windows系统一键优化.bat              # 系统隐私/性能一键优化
 │   └── tools/                             # Linux风格命令工具集
-│       ├── ls.ps1, du.ps1, df.ps1...     # 54个Linux风格命令
+│       ├── ls.ps1, du.ps1, df.ps1...     # 55个Linux风格命令
 │       ├── install.ps1                    # 安装脚本
 │       └── README.md                      # tools详细说明
 │
@@ -77,6 +78,21 @@ cd windows/tools
 ### windows/Window微信多开.bat
 
 快速启动多个微信实例，支持运行中直接多开。
+
+### windows/Windows系统一键优化.bat
+
+Windows系统一键优化脚本，右键以管理员身份运行。
+
+**优化功能:**
+- 关闭系统通知和推送通知
+- 禁用多余自启动项和计划任务
+- 隐私设置优化（广告ID、SmartScreen、应用权限）
+- 清除文件浏览记录和运行历史
+- 关闭Windows自动更新
+- 禁用遥测和数据收集服务
+- 关闭活动历史记录和剪贴板同步
+- 关闭位置服务和广告ID
+- 资源管理器优化（显示扩展名、隐藏文件、此电脑启动等）
 
 ---
 
