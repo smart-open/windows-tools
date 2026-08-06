@@ -14,9 +14,9 @@ scripts/
 │   ├── Window Beyond Compare重置试用.bat  # BC试用期重置
 │   ├── Window微信多开.bat                  # 微信多开工具
 │   └── tools/                             # Linux风格命令工具集
-│       ├── ls.ps1, du.ps1, df.ps1...
+│       ├── ls.ps1, du.ps1, df.ps1...     # 28个Linux风格命令
 │       ├── install.ps1                    # 安装脚本
-│       └── README.md                      # tools说明文档
+│       └── README.md                      # tools详细说明
 │
 └── linux/                       # Linux 脚本目录
     ├── system_diagnostic.sh               # 系统诊断脚本
@@ -66,19 +66,7 @@ scripts/
 
 ### 🛠️ windows/tools/ - Linux风格命令工具集
 
-在 Windows PowerShell 中使用 Linux 风格的常用命令。
-
-**包含命令（25+个）：**
-
-| 类别 | 命令 |
-|------|------|
-| 文件操作 | ls, pwd, cp, mv, rm, mkdir, touch |
-| 文件查看 | cat, head, tail, more, less, grep, wc |
-| 系统信息 | df, du, free, uptime |
-| 进程管理 | ps, top, kill |
-| 网络工具 | ip, netstat, ss |
-| 压缩下载 | zip, unzip, wget, curl |
-| 其他 | history |
+在 Windows PowerShell 中使用 Linux 风格的常用命令（共28个命令）。
 
 **安装使用：**
 ```powershell
@@ -86,16 +74,88 @@ cd windows/tools
 .\install.ps1
 ```
 
-**使用示例：**
+#### 快速参考
+
+| 类别 | 命令列表 |
+|------|---------|
+| **文件操作** | ls, pwd, cp, mv, rm, mkdir, touch |
+| **文件查看** | cat, head, tail, more, less, grep, wc, **awk** |
+| **系统信息** | df, du, free, uptime |
+| **进程管理** | ps, top, kill, **htop** |
+| **网络工具** | ip, netstat, ss, **dig** |
+| **压缩下载** | zip, unzip, wget, curl |
+| **其他** | history |
+
+#### 新增命令详细说明
+
+##### 🔍 dig - DNS查询工具
+
+**功能：** 查询DNS记录（支持IPv6）
+
+**支持的查询类型：**
+- A - IPv4地址记录
+- **AAAA - IPv6地址记录（新增）**
+- MX - 邮件交换记录
+- NS - 域名服务器记录
+- TXT - 文本记录
+- CNAME - 别名记录
+
+**用法示例：**
 ```powershell
-ls -la        # 列出文件
-df -h         # 磁盘使用
-free -h       # 内存使用
-ps            # 进程列表
-grep pattern  # 搜索文本
+dig google.com              # 查询IPv4地址
+dig google.com AAAA         # 查询IPv6地址
+dig google.com MX           # 查询邮件服务器
+dig google.com NS           # 查询域名服务器
 ```
 
-详细说明请参考：`windows/tools/README.md`
+---
+
+##### 📝 awk - 文本处理工具
+
+**功能：** 简单的awk风格文本处理
+
+**支持的变量：**
+- `$0` - 整行内容
+- `$1, $2, $3...` - 第N个字段
+- `NF` - 字段数量
+- `NR` - 当前行号
+
+**用法示例：**
+```powershell
+# 打印第一列
+awk '{print $1}' file.txt
+
+# 打印行号和整行
+awk '{print NR ": " $0}' file.txt
+
+# 管道输入
+cat file.txt | awk '{print $1, $2}'
+```
+
+---
+
+##### 🖥️ htop - 交互式进程查看器
+
+**功能：** 简化版htop，实时显示系统资源和进程
+
+**特点：**
+- CPU和内存使用进度条可视化 (█ ░)
+- 按CPU/内存/PID排序（运行时可切换）
+- 自动刷新（默认2秒）
+- 按Q键退出
+
+**用法示例：**
+```powershell
+htop                           # 默认按CPU排序启动
+htop -SortBy MEM              # 按内存排序启动
+htop -Delay 1 -SortBy PID     # 1秒刷新，按PID排序
+```
+
+**运行时按键操作：**
+- `Q` 键：退出程序
+- `C` 键：按CPU使用率排序
+- `M` 键：按内存使用率排序
+- `P` 键：按PID排序
 
 ---
 
@@ -146,6 +206,8 @@ chmod +x system_diagnostic.sh
 - 所有批处理脚本均使用 UTF-8 编码，如遇中文乱码请确认编码设置
 - Beyond Compare 重置工具需要管理员权限修改注册表
 - tools/ 目录下的 PowerShell 脚本需要先运行 install.ps1 添加到 PATH
+- htop 的交互式功能较为简化，仅支持刷新和排序切换
+- awk 仅支持基础的字段打印，不支持复杂模式匹配
 
 ### Linux
 - 部分诊断功能需要 root 权限

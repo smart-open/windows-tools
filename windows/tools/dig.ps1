@@ -6,7 +6,7 @@ DNS lookup tool (Linux dig style - simplified)
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$Domain,
-    [string]$Type = "A"  # 查询类型: A, MX, NS, TXT, CNAME
+    [string]$Type = "A"  # 查询类型: A, AAAA, MX, NS, TXT, CNAME
 )
 
 Write-Host "; <<>> Windows dig (simplified) <<>> $Domain $Type"
@@ -20,7 +20,18 @@ try {
             $result = [System.Net.Dns]::GetHostEntry($Domain)
             Write-Host ";; ANSWER SECTION:"
             foreach ($ip in $result.AddressList) {
-                Write-Host "$Domain.    IN    A    $($ip.IPAddressToString)"
+                if ($ip.AddressFamily -eq "InterNetwork") {
+                    Write-Host "$Domain.    IN    A    $($ip.IPAddressToString)"
+                }
+            }
+        }
+        "AAAA" {
+            $result = [System.Net.Dns]::GetHostEntry($Domain)
+            Write-Host ";; ANSWER SECTION:"
+            foreach ($ip in $result.AddressList) {
+                if ($ip.AddressFamily -eq "InterNetworkV6") {
+                    Write-Host "$Domain.    IN    AAAA    $($ip.IPAddressToString)"
+                }
             }
         }
         "MX" {
@@ -53,7 +64,7 @@ try {
         }
         default {
             Write-Host "Unsupported type: $Type"
-            Write-Host "Supported types: A, MX, NS, TXT, CNAME"
+            Write-Host "Supported types: A, AAAA, MX, NS, TXT, CNAME"
         }
     }
 } catch {

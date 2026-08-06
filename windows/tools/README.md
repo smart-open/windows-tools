@@ -90,10 +90,11 @@
 
 ### 🔍 dig - DNS查询工具
 
-**功能：** 查询DNS记录（简化版）
+**功能：** 查询DNS记录（支持IPv6）
 
 **支持的查询类型：**
 - A - IPv4地址记录
+- **AAAA - IPv6地址记录**
 - MX - 邮件交换记录
 - NS - 域名服务器记录
 - TXT - 文本记录
@@ -101,10 +102,10 @@
 
 **用法示例：**
 ```powershell
-dig google.com              # 查询A记录
+dig google.com              # 查询IPv4地址
+dig google.com AAAA         # 查询IPv6地址
 dig google.com MX           # 查询邮件服务器
 dig google.com NS           # 查询域名服务器
-dig google.com TXT          # 查询TXT记录
 ```
 
 ---
@@ -138,21 +139,23 @@ cat file.txt | awk '{print $1, $2}'
 **功能：** 简化版htop，实时显示系统资源和进程
 
 **特点：**
-- CPU和内存使用进度条可视化
-- 按CPU排序的进程列表
+- CPU和内存使用进度条可视化 (█ ░)
+- 按CPU/内存/PID排序（运行时可切换）
 - 自动刷新（默认2秒）
 - 按Q键退出
 
 **用法示例：**
 ```powershell
-htop                    # 启动htop（默认2秒刷新）
-htop -Delay 1          # 1秒刷新一次
-htop -ShowProcess 20   # 显示20个进程
+htop                           # 默认按CPU排序启动
+htop -SortBy MEM              # 按内存排序启动
+htop -Delay 1 -SortBy PID     # 1秒刷新，按PID排序
 ```
 
-**操作：**
+**运行时按键操作：**
 - `Q` 键：退出程序
-- 不支持滚动和交互排序（简化版）
+- `C` 键：按CPU使用率排序
+- `M` 键：按内存使用率排序
+- `P` 键：按PID排序
 
 ---
 

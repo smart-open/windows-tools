@@ -4,8 +4,10 @@ Interactive process viewer (Linux htop style - simplified)
 #>
 
 param(
-    [int]$Delay = 2,      # 刷新间隔（秒）
-    [int]$ShowProcess = 15  # 显示进程数
+    [int]$Delay = 2,          # 刷新间隔（秒）
+    [int]$ShowProcess = 15,   # 显示进程数
+    [ValidateSet("CPU", "MEM", "PID")]
+    [string]$SortBy = "CPU"   # 排序方式: CPU, MEM, PID
 )
 
 # 清屏
@@ -32,12 +34,18 @@ while ($true) {
     $cpuUsage = $cpu.LoadPercentage
     if ($null -eq $cpuUsage) { $cpuUsage = 0 }
 
-    # 获取进程信息
-    $processes = Get-Process | Sort-Object CPU -Descending | Select-Object -First $ShowProcess
+    # 获取进程信息并排序
+    $processes = Get-Process | Select-Object Id, ProcessName, CPU, WorkingSet
+    switch ($SortBy.ToUpper()) {
+        "CPU" { $processes = $processes | Sort-Object CPU -Descending }
+        "MEM" { $processes = $processes | Sort-Object WorkingSet -Descending }
+        "PID" { $processes = $processes | Sort-Object Id }
+    }
+    $processes = $processes | Select-Object -First $ShowProcess
 
     # 输出标题
     Write-Host "Windows htop (simplified) - Press Q to quit" -ForegroundColor Cyan
-    Write-Host "Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  Refresh: ${Delay}s"
+    Write-Host "Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')  Refresh: ${Delay}s  Sort by: $SortBy"
     Write-Host ""
 
     # CPU进度条
@@ -65,13 +73,16 @@ while ($true) {
     }
 
     Write-Host ""
-    Write-Host "Controls: Q=Quit | Arrow keys scroll (not supported)" -ForegroundColor DarkGray
+    Write-Host "Controls: Q=Quit | Sort: C=CPU, M=MEM, P=PID" -ForegroundColor DarkGray
 
     # 检查按键
     if ([Console]::KeyAvailable) {
         $key = [Console]::ReadKey($true)
-        if ($key.Key -eq 'Q') {
-            break
+        switch ($key.Key.ToString().ToUpper()) {
+            "Q" { break }
+            "C" { $SortBy = "CPU" }
+            "M" { $SortBy = "MEM" }
+            "P" { $SortBy = "PID" }
         }
     }
 
