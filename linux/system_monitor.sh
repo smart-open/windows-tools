@@ -27,19 +27,27 @@ alert() {
 }
 
 get_cpu_usage() {
-    top -bn1 | grep "Cpu(s)" | awk '{print 100 - $8}' | cut -d. -f1
+    # 使用/proc/stat获取，兼容所有发行版
+    cat /proc/stat | awk '/^cpu / {usage=($2+$4)*100/($2+$4+$5)} END {printf "%d\n", usage}'
 }
 
 get_mem_usage() {
+    # 兼容不同free输出格式
     free | awk '/Mem:/ {print int($3/$2 * 100)}'
 }
 
 get_disk_usage() {
-    df -h / | awk '/\// {print $5}' | tr -d '%'
+    df -P / | awk '/\// {print $5}' | tr -d '%'
 }
 
 get_swap_usage() {
-    free | awk '/Swap:/ {print int($3/$2 * 100)}'
+    # 检查swap是否存在，避免除零错误
+    local swap_total=$(free | awk '/Swap:/ {print $2}')
+    if [ -z "$swap_total" ] || [ "$swap_total" -eq 0 ]; then
+        echo 0
+    else
+        free | awk '/Swap:/ {print int($3/$2 * 100)}'
+    fi
 }
 
 get_load_avg() {
@@ -54,6 +62,11 @@ check_alerts() {
     local cpu=$(get_cpu_usage)
     local mem=$(get_mem_usage)
     local disk=$(get_disk_usage)
+    
+    # 确保变量有默认值，避免比较错误
+    cpu=${cpu:-0}
+    mem=${mem:-0}
+    disk=${disk:-0}
     
     [ "$cpu" -gt "$ALERT_THRESHOLD" ] && alert "High CPU usage: ${cpu}%"
     [ "$mem" -gt "$ALERT_THRESHOLD" ] && alert "High Memory usage: ${mem}%"
@@ -74,6 +87,12 @@ show_dashboard() {
     local disk=$(get_disk_usage)
     local swap=$(get_swap_usage)
     local load=$(get_load_avg)
+    
+    # 默认值保护
+    cpu=${cpu:-0}
+    mem=${mem:-0}
+    disk=${disk:-0}
+    swap=${swap:-0}
     
     echo "--- CPU Usage ---"
     [ "$cpu" -ge "$ALERT_THRESHOLD" ] && echo -e "CPU: ${RED}${cpu}%${NC}" || echo -e "CPU: ${GREEN}${cpu}%${NC}"

@@ -20,8 +20,17 @@ log() {
 }
 
 check_docker_running() {
+    # 检查docker命令是否存在
+    if ! command -v docker >/dev/null 2>&1; then
+        log "[ERROR] Docker command not found. Please install Docker first."
+        return 1
+    fi
+    
+    # 检查能否连接docker daemon
     if ! docker info >/dev/null 2>&1; then
-        log "[ERROR] Docker is not running or not accessible"
+        log "[ERROR] Cannot connect to Docker daemon."
+        log "  - If running as non-root, add user to docker group: sudo usermod -aG docker $USER"
+        log "  - Or run this script with sudo"
         return 1
     fi
     return 0

@@ -58,6 +58,13 @@ apply_network_tuning() {
         local key=${setting%%=*}
         local value=${setting#*=}
         
+        # 检查参数是否存在（兼容不同内核版本）
+        if ! sysctl -n "$key" >/dev/null 2>&1; then
+            log "  [SKIP] $key not supported on this kernel"
+            ((SKIPPED++))
+            continue
+        fi
+        
         if sysctl -w "$key=$value" >/dev/null 2>&1; then
             log "  [OK] $key = $value"
             ((APPLIED++))

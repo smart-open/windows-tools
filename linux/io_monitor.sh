@@ -56,8 +56,9 @@ calculate_io() {
     
     local read_ops=$(( (reads2 - reads1) / INTERVAL ))
     local write_ops=$(( (writes2 - writes1) / INTERVAL ))
-    local read_mb=$(echo "scale=2; ($read_sectors2 - $read_sectors1) * 512 / 1024 / 1024 / $INTERVAL" | bc 2>/dev/null || echo "0")
-    local write_mb=$(echo "scale=2; ($write_sectors2 - $write_sectors1) * 512 / 1024 / 1024 / $INTERVAL" | bc 2>/dev/null || echo "0")
+    # 使用awk替代bc，避免额外依赖
+    local read_mb=$(awk "BEGIN {printf \"%.2f\", ($read_sectors2 - $read_sectors1) * 512.0 / 1024 / 1024 / $INTERVAL}")
+    local write_mb=$(awk "BEGIN {printf \"%.2f\", ($write_sectors2 - $write_sectors1) * 512.0 / 1024 / 1024 / $INTERVAL}")
     
     echo "$read_ops $write_ops $read_mb $write_mb"
 }
@@ -78,10 +79,10 @@ get_top_io_processes() {
 check_threshold() {
     local read_mb="$1"
     local write_mb="$2"
-    local total=$(echo "$read_mb + $write_mb" | bc 2>/dev/null)
+    # 使用awk替代bc进行浮点数比较
+    local total=$(awk "BEGIN {printf \"%.2f\", $read_mb + $write_mb}")
     
-    local result=$(echo "$total > $THRESHOLD" | bc 2>/dev/null)
-    if [ "$result" = "1" ]; then
+    if awk "BEGIN {exit !($total > $THRESHOLD)}"; then
         log "[ALERT] High I/O detected: ${total}MB/s (read: ${read_mb}MB/s, write: ${write_mb}MB/s)"
         ((ALERT_COUNT++))
     fi
@@ -139,18 +140,20 @@ monitor_all_disks() {
         local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
         printf "%-20s" "$timestamp"
         
-        local total_io=0
+        # 第一次采样，保存所有设备的stats
+        declare -A stats_before
         for dev in $disks; do
-            local stats1=$(get_disk_stats "$dev")
-            sleep 0.1
+            stats_before[$dev]=$(get_disk_stats "$dev")
         done
         sleep $INTERVAL
         
         for dev in $disks; do
-            local stats2=$(get_disk_stats "$dev")
+            local stats_after=$(get_disk_stats "$dev")
+            local stats1="${stats_before[$dev]}"
             local sectors1=$(echo "$stats1" | awk '{print $6 + $10}')
-            local sectors2=$(echo "$stats2" | awk '{print $6 + $10}')
-            local mb=$(echo "scale=1; ($sectors2 - $sectors1) * 512 / 1024 / 1024 / $INTERVAL" | bc 2>/dev/null || echo "0")
+            local sectors2=$(echo "$stats_after" | awk '{print $6 + $10}')
+            # 使用awk替代bc
+            local mb=$(awk "BEGIN {printf \"%.1f\", ($sectors2 - $sectors1) * 512.0 / 1024 / 1024 / $INTERVAL}")
             printf " %10s" "$mb"
         done
         echo ""

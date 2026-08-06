@@ -28,21 +28,28 @@ alert() {
 }
 
 is_process_running() {
-    pgrep -f "$1" > /dev/null 2>&1
+    local proc="$1"
+    # 多种检测方式，提高兼容性
+    pgrep -f "$proc" > /dev/null 2>&1 && return 0
+    pidof "$proc" > /dev/null 2>&1 && return 0
+    systemctl is-active --quiet "$proc" 2>/dev/null && return 0
+    return 1
 }
 
 restart_process() {
     local proc="$1"
     log "Attempting to restart: $proc"
     
-    if systemctl is-active --quiet "$proc" 2>/dev/null; then
-        systemctl restart "$proc"
+    # 方式1: systemctl
+    if systemctl list-unit-files 2>/dev/null | grep -q "$proc"; then
+        systemctl restart "$proc" 2>/dev/null
         if [ $? -eq 0 ]; then
             log "Successfully restarted via systemctl: $proc"
             return 0
         fi
     fi
     
+    # 方式2: service命令
     if command -v service >/dev/null 2>&1; then
         service "$proc" restart 2>/dev/null
         if [ $? -eq 0 ]; then
@@ -51,6 +58,7 @@ restart_process() {
         fi
     fi
     
+    # 方式3: 直接启动
     pkill -f "$proc" 2>/dev/null
     sleep 1
     nohup "$proc" > /dev/null 2>&1 &

@@ -33,14 +33,17 @@ backup_mysql() {
     
     log "Starting MySQL backup: $DB_NAME"
     
+    # 使用MYSQL_PWD环境变量避免命令行密码暴露
     local mysql_opts="-h $DB_HOST -u $DB_USER"
-    [ -n "$DB_PASS" ] && mysql_opts="$mysql_opts -p$DB_PASS"
     [ -n "$DB_PORT" ] && mysql_opts="$mysql_opts -P $DB_PORT"
+    export MYSQL_PWD="$DB_PASS"
     
     if mysqldump $mysql_opts "$DB_NAME" > "$backup_file" 2>> "$LOG_FILE"; then
+        unset MYSQL_PWD
         compress_file "$backup_file"
         return 0
     else
+        unset MYSQL_PWD
         log "[ERROR] MySQL backup failed"
         rm -f "$backup_file"
         return 1
@@ -75,14 +78,17 @@ backup_all_mysql() {
     
     log "Starting MySQL backup: all databases"
     
+    # 使用MYSQL_PWD环境变量避免命令行密码暴露
     local mysql_opts="-h $DB_HOST -u $DB_USER"
-    [ -n "$DB_PASS" ] && mysql_opts="$mysql_opts -p$DB_PASS"
     [ -n "$DB_PORT" ] && mysql_opts="$mysql_opts -P $DB_PORT"
+    export MYSQL_PWD="$DB_PASS"
     
     if mysqldump $mysql_opts --all-databases > "$backup_file" 2>> "$LOG_FILE"; then
+        unset MYSQL_PWD
         compress_file "$backup_file"
         return 0
     else
+        unset MYSQL_PWD
         log "[ERROR] MySQL all databases backup failed"
         rm -f "$backup_file"
         return 1
@@ -128,9 +134,12 @@ restore_backup() {
     esac
     
     if [ "$DB_TYPE" = "mysql" ]; then
+        # 使用MYSQL_PWD环境变量避免命令行密码暴露
         local mysql_opts="-h $DB_HOST -u $DB_USER"
-        [ -n "$DB_PASS" ] && mysql_opts="$mysql_opts -p$DB_PASS"
+        [ -n "$DB_PORT" ] && mysql_opts="$mysql_opts -P $DB_PORT"
+        export MYSQL_PWD="$DB_PASS"
         mysql $mysql_opts "$DB_NAME" < "$temp_sql" 2>> "$LOG_FILE"
+        unset MYSQL_PWD
     elif [ "$DB_TYPE" = "pgsql" ]; then
         export PGPASSWORD="$DB_PASS"
         local pg_opts="-h $DB_HOST -U $DB_USER"

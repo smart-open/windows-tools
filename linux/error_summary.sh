@@ -54,13 +54,13 @@ scan_auth_logs() {
     
     for log_file in $log_files; do
         local count=$(grep -c "Failed password" "$log_file" 2>/dev/null)
-        failed_logins=$((failed_logins + count))
+        failed_logins=$((failed_logins + ${count:-0}))
         
         count=$(grep -c "Invalid user" "$log_file" 2>/dev/null)
-        invalid_users=$((invalid_users + count))
+        invalid_users=$((invalid_users + ${count:-0}))
         
         count=$(grep -c "session opened for user root" "$log_file" 2>/dev/null)
-        root_logins=$((root_logins + count))
+        root_logins=$((root_logins + ${count:-0}))
     done
     
     ERROR_SUMMARY["Auth_Failed_Logins"]=$failed_logins
@@ -88,16 +88,16 @@ scan_system_logs() {
     
     for log_file in $log_files; do
         local count=$(grep -ci "error" "$log_file" 2>/dev/null)
-        errors=$((errors + count))
+        errors=$((errors + ${count:-0}))
         
         count=$(grep -ci "warn" "$log_file" 2>/dev/null)
-        warnings=$((warnings + count))
+        warnings=$((warnings + ${count:-0}))
         
         count=$(grep -ci "critical\|fatal\|panic" "$log_file" 2>/dev/null)
-        critical=$((critical + count))
+        critical=$((critical + ${count:-0}))
         
         count=$(grep -c "oom-killer\|Out of memory" "$log_file" 2>/dev/null)
-        oom=$((oom + count))
+        oom=$((oom + ${count:-0}))
     done
     
     ERROR_SUMMARY["System_Errors"]=$errors
@@ -125,13 +125,13 @@ scan_kernel_logs() {
     
     for log_file in $log_files; do
         local count=$(grep -c "segfault" "$log_file" 2>/dev/null)
-        segfaults=$((segfaults + count))
+        segfaults=$((segfaults + ${count:-0}))
         
         count=$(grep -ci "I/O error\|disk error" "$log_file" 2>/dev/null)
-        io_errors=$((io_errors + count))
+        io_errors=$((io_errors + ${count:-0}))
         
         count=$(grep -ci "hardware error\|machine check" "$log_file" 2>/dev/null)
-        hw_errors=$((hw_errors + count))
+        hw_errors=$((hw_errors + ${count:-0}))
     done
     
     ERROR_SUMMARY["Kernel_Segfaults"]=$segfaults
@@ -156,11 +156,11 @@ scan_nginx_logs() {
     local errors_5xx=0
     
     for log_file in $log_files; do
-        local count=$(grep -c " 4[0-9][0-9] " "$log_file" 2>/dev/null)
-        errors_4xx=$((errors_4xx + count))
+        local count=$(grep -cE " 4[0-9]{2} " "$log_file" 2>/dev/null)
+        errors_4xx=$((errors_4xx + ${count:-0}))
         
-        count=$(grep -c " 5[0-9][0-9] " "$log_file" 2>/dev/null)
-        errors_5xx=$((errors_5xx + count))
+        count=$(grep -cE " 5[0-9]{2} " "$log_file" 2>/dev/null)
+        errors_5xx=$((errors_5xx + ${count:-0}))
     done
     
     ERROR_SUMMARY["Nginx_4xx"]=$errors_4xx
@@ -183,7 +183,7 @@ scan_apache_logs() {
     local errors=0
     for log_file in $log_files; do
         local count=$(grep -ci "error" "$log_file" 2>/dev/null)
-        errors=$((errors + count))
+        errors=$((errors + ${count:-0}))
     done
     
     ERROR_SUMMARY["Apache_Errors"]=$errors
@@ -200,8 +200,8 @@ scan_docker_logs() {
     
     local container_errors=0
     for container in $(docker ps -q 2>/dev/null); do
-        local count=$(docker logs "$container" 2>&1 | grep -ci "error\|fatal" | tail -1)
-        [ -n "$count" ] && container_errors=$((container_errors + count))
+        local count=$(docker logs "$container" 2>&1 | grep -ci "error\|fatal")
+        container_errors=$((container_errors + ${count:-0}))
     done
     
     ERROR_SUMMARY["Docker_Errors"]=$container_errors
@@ -224,10 +224,11 @@ scan_journal() {
         *) priority_filter="--since=-1day" ;;
     esac
     
-    local emergency=$(journalctl $priority_filter -p 0 2>/dev/null | grep -c "" || echo 0)
-    local alert=$(journalctl $priority_filter -p 1 2>/dev/null | grep -c "" || echo 0)
-    local critical=$(journalctl $priority_filter -p 2 2>/dev/null | grep -c "" || echo 0)
-    local errors=$(journalctl $priority_filter -p 3 2>/dev/null | grep -c "" || echo 0)
+    # 使用wc -l而不是grep -c ""，避免空匹配问题
+    local emergency=$(journalctl $priority_filter -p 0 --no-pager 2>/dev/null | wc -l)
+    local alert=$(journalctl $priority_filter -p 1 --no-pager 2>/dev/null | wc -l)
+    local critical=$(journalctl $priority_filter -p 2 --no-pager 2>/dev/null | wc -l)
+    local errors=$(journalctl $priority_filter -p 3 --no-pager 2>/dev/null | wc -l)
     
     ERROR_SUMMARY["Journal_Emergency"]=$emergency
     ERROR_SUMMARY["Journal_Alert"]=$alert
@@ -320,7 +321,7 @@ while getopts "t:e:a:sh" opt; do
         t) TIME_PERIOD="$OPTARG" ;;
         e) ALERT_EMAIL="$OPTARG" ;;
         a) ALERT_THRESHOLD="$OPTARG" ;;
-        s) echo -n "${ERROR_SUMMARY["*"]}" | tr ' ' '\n' | grep "=" | sort; exit 0 ;;
+        s) for key in "${!ERROR_SUMMARY[@]}"; do echo "$key=${ERROR_SUMMARY[$key]}"; done | sort; exit 0 ;;
         h) echo "Usage: $0 [-t 1h|6h|12h|24h|7d|30d] [-e email] [-a alert_threshold]"; exit 0 ;;
     esac
 done

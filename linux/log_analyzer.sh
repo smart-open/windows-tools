@@ -36,11 +36,11 @@ analyze_auth_log() {
         return 1
     fi
     
-    local failed_logins=$(grep -c "Failed password" "$log_file" 2>/dev/null || echo "0")
-    local accepted_logins=$(grep -c "Accepted password" "$log_file" 2>/dev/null || echo "0")
-    local sudo_commands=$(grep -c "sudo.*COMMAND=" "$log_file" 2>/dev/null || echo "0")
-    local root_logins=$(grep -c "session opened for user root" "$log_file" 2>/dev/null || echo "0")
-    local invalid_users=$(grep -c "Invalid user" "$log_file" 2>/dev/null || echo "0")
+    local failed_logins=$(grep -c "Failed password" "$log_file" 2>/dev/null); failed_logins=${failed_logins:-0}
+    local accepted_logins=$(grep -c "Accepted password" "$log_file" 2>/dev/null); accepted_logins=${accepted_logins:-0}
+    local sudo_commands=$(grep -c "sudo.*COMMAND=" "$log_file" 2>/dev/null); sudo_commands=${sudo_commands:-0}
+    local root_logins=$(grep -c "session opened for user root" "$log_file" 2>/dev/null); root_logins=${root_logins:-0}
+    local invalid_users=$(grep -c "Invalid user" "$log_file" 2>/dev/null); invalid_users=${invalid_users:-0}
     
     echo -e "${GREEN}Successful logins:${NC} $accepted_logins"
     echo -e "${YELLOW}Failed logins:${NC} $failed_logins"
