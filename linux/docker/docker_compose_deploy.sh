@@ -157,6 +157,7 @@ ES_PASS="Elastic123!"
 NACOS_PASS="Nacos123!"
 RABBIT_USER="admin"
 RABBIT_PASS="Rabbit123!"
+RABBIT_ERLANG_COOKIE="rabbitmq_cluster_cookie"
 KEYCLOAK_ADMIN="admin"
 KEYCLOAK_PASS="Keycloak123!"
 XXLJOB_USER="admin"
@@ -395,6 +396,124 @@ gen_mysql() {
 EOF
 }
 
+gen_mysql_master_slave() {
+    cat << 'EOF'
+
+  mysql-master:
+    image: mysql:8.4
+    container_name: mysql-master
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS}
+      MYSQL_DATABASE: appdb
+      TZ: Asia/Shanghai
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+      --log-slave-updates=ON
+    volumes:
+      - mysql-master-data:/var/lib/mysql
+    networks:
+      - docker-stack-net
+
+  mysql-slave:
+    image: mysql:8.4
+    container_name: mysql-slave
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS}
+      TZ: Asia/Shanghai
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --server-id=2
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+      --log-slave-updates=ON
+      --read-only=ON
+    depends_on:
+      - mysql-master
+    volumes:
+      - mysql-slave-data:/var/lib/mysql
+    networks:
+      - docker-stack-net
+EOF
+}
+
+gen_mysql_dual_master() {
+    cat << 'EOF'
+
+  mysql-master1:
+    image: mysql:8.4
+    container_name: mysql-master1
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS}
+      MYSQL_DATABASE: appdb
+      TZ: Asia/Shanghai
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --server-id=1
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+      --log-slave-updates=ON
+      --auto-increment-increment=2
+      --auto-increment-offset=1
+    volumes:
+      - mysql-master1-data:/var/lib/mysql
+    networks:
+      - docker-stack-net
+
+  mysql-master2:
+    image: mysql:8.4
+    container_name: mysql-master2
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASS}
+      MYSQL_DATABASE: appdb
+      TZ: Asia/Shanghai
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --server-id=2
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --gtid-mode=ON
+      --enforce-gtid-consistency=ON
+      --log-slave-updates=ON
+      --auto-increment-increment=2
+      --auto-increment-offset=2
+    depends_on:
+      - mysql-master1
+    volumes:
+      - mysql-master2-data:/var/lib/mysql
+    networks:
+      - docker-stack-net
+EOF
+}
+
 gen_postgresql() {
     cat << 'EOF'
 
@@ -529,6 +648,91 @@ gen_elasticsearch() {
 EOF
 }
 
+gen_elasticsearch_cluster() {
+    cat << 'EOF'
+
+  es-node1:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.16
+    container_name: es-node1
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      - node.name=es-node1
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=es-node2,es-node3
+      - cluster.initial_master_nodes=es-node1,es-node2,es-node3
+      - ELASTIC_PASSWORD=${ES_PASS}
+      - xpack.security.enabled=true
+      - xpack.security.transport.ssl.enabled=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es-node1-data:/usr/share/elasticsearch/data
+    networks:
+      - docker-stack-net
+
+  es-node2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.16
+    container_name: es-node2
+    restart: unless-stopped
+    ports:
+      - "9201:9200"
+    environment:
+      - node.name=es-node2
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=es-node1,es-node3
+      - cluster.initial_master_nodes=es-node1,es-node2,es-node3
+      - ELASTIC_PASSWORD=${ES_PASS}
+      - xpack.security.enabled=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es-node2-data:/usr/share/elasticsearch/data
+    networks:
+      - docker-stack-net
+
+  es-node3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.16
+    container_name: es-node3
+    restart: unless-stopped
+    ports:
+      - "9202:9200"
+    environment:
+      - node.name=es-node3
+      - cluster.name=es-cluster
+      - discovery.seed_hosts=es-node1,es-node2
+      - cluster.initial_master_nodes=es-node1,es-node2,es-node3
+      - ELASTIC_PASSWORD=${ES_PASS}
+      - xpack.security.enabled=true
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - es-node3-data:/usr/share/elasticsearch/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
 gen_kibana() {
     cat << 'EOF'
 
@@ -631,6 +835,66 @@ gen_rabbitmq() {
 EOF
 }
 
+gen_rabbitmq_cluster() {
+    cat << 'EOF'
+
+  rabbitmq1:
+    image: rabbitmq:4.3.3-management
+    container_name: rabbitmq1
+    restart: unless-stopped
+    hostname: rabbitmq1
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
+      RABBITMQ_ERLANG_COOKIE: ${RABBIT_ERLANG_COOKIE}
+    volumes:
+      - rabbitmq1-data:/var/lib/rabbitmq
+    networks:
+      - docker-stack-net
+
+  rabbitmq2:
+    image: rabbitmq:4.3.3-management
+    container_name: rabbitmq2
+    restart: unless-stopped
+    hostname: rabbitmq2
+    ports:
+      - "5673:5672"
+      - "15673:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
+      RABBITMQ_ERLANG_COOKIE: ${RABBIT_ERLANG_COOKIE}
+    depends_on:
+      - rabbitmq1
+    volumes:
+      - rabbitmq2-data:/var/lib/rabbitmq
+    networks:
+      - docker-stack-net
+
+  rabbitmq3:
+    image: rabbitmq:4.3.3-management
+    container_name: rabbitmq3
+    restart: unless-stopped
+    hostname: rabbitmq3
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBIT_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBIT_PASS}
+      RABBITMQ_ERLANG_COOKIE: ${RABBIT_ERLANG_COOKIE}
+    depends_on:
+      - rabbitmq1
+    volumes:
+      - rabbitmq3-data:/var/lib/rabbitmq
+    networks:
+      - docker-stack-net
+EOF
+}
+
 gen_kafka() {
     cat << 'EOF'
 
@@ -655,6 +919,74 @@ gen_kafka() {
 EOF
 }
 
+gen_kafka_cluster() {
+    cat << 'EOF'
+
+  kafka1:
+    image: confluentinc/cp-kafka:8.3.0
+    container_name: kafka1
+    restart: unless-stopped
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    volumes:
+      - kafka1-data:/var/lib/kafka/data
+    networks:
+      - docker-stack-net
+
+  kafka2:
+    image: confluentinc/cp-kafka:8.3.0
+    container_name: kafka2
+    restart: unless-stopped
+    ports:
+      - "9093:9092"
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    volumes:
+      - kafka2-data:/var/lib/kafka/data
+    networks:
+      - docker-stack-net
+
+  kafka3:
+    image: confluentinc/cp-kafka:8.3.0
+    container_name: kafka3
+    restart: unless-stopped
+    ports:
+      - "9094:9092"
+    environment:
+      KAFKA_BROKER_ID: 3
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    depends_on:
+      - zookeeper1
+      - zookeeper2
+      - zookeeper3
+    volumes:
+      - kafka3-data:/var/lib/kafka/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
 gen_zookeeper() {
     cat << 'EOF'
 
@@ -669,6 +1001,62 @@ gen_zookeeper() {
     volumes:
       - zookeeper-data:/data
       - zookeeper-logs:/datalog
+    networks:
+      - docker-stack-net
+EOF
+}
+
+gen_zookeeper_cluster() {
+    cat << 'EOF'
+
+  zookeeper1:
+    image: zookeeper:3.9.5
+    container_name: zookeeper1
+    restart: unless-stopped
+    hostname: zookeeper1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+    volumes:
+      - zookeeper1-data:/data
+      - zookeeper1-logs:/datalog
+    networks:
+      - docker-stack-net
+
+  zookeeper2:
+    image: zookeeper:3.9.5
+    container_name: zookeeper2
+    restart: unless-stopped
+    hostname: zookeeper2
+    ports:
+      - "2182:2181"
+    environment:
+      ZOO_MY_ID: 2
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+    volumes:
+      - zookeeper2-data:/data
+      - zookeeper2-logs:/datalog
+    networks:
+      - docker-stack-net
+
+  zookeeper3:
+    image: zookeeper:3.9.5
+    container_name: zookeeper3
+    restart: unless-stopped
+    hostname: zookeeper3
+    ports:
+      - "2183:2181"
+    environment:
+      ZOO_MY_ID: 3
+      ZOO_SERVERS: server.1=zookeeper1:2888:3888;2181 server.2=zookeeper2:2888:3888;2181 server.3=zookeeper3:2888:3888;2181
+      ZOO_4LW_COMMANDS_WHITELIST: "*"
+    volumes:
+      - zookeeper3-data:/data
+      - zookeeper3-logs:/datalog
     networks:
       - docker-stack-net
 EOF
@@ -704,6 +1092,71 @@ gen_rocketmq() {
     volumes:
       - rocketmq-broker-data:/home/rocketmq/store
       - rocketmq-broker-logs:/home/rocketmq/logs
+    networks:
+      - docker-stack-net
+EOF
+}
+
+gen_rocketmq_cluster() {
+    cat << 'EOF'
+
+  rocketmq-namesrv1:
+    image: apache/rocketmq:5.5.0
+    container_name: rocketmq-namesrv1
+    restart: unless-stopped
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    volumes:
+      - rocketmq-namesrv1-logs:/home/rocketmq/logs
+    networks:
+      - docker-stack-net
+
+  rocketmq-namesrv2:
+    image: apache/rocketmq:5.5.0
+    container_name: rocketmq-namesrv2
+    restart: unless-stopped
+    ports:
+      - "9877:9876"
+    command: sh mqnamesrv
+    volumes:
+      - rocketmq-namesrv2-logs:/home/rocketmq/logs
+    networks:
+      - docker-stack-net
+
+  rocketmq-broker1:
+    image: apache/rocketmq:5.5.0
+    container_name: rocketmq-broker1
+    restart: unless-stopped
+    ports:
+      - "10911:10911"
+    environment:
+      NAMESRV_ADDR: "rocketmq-namesrv1:9876;rocketmq-namesrv2:9876"
+    command: sh mqbroker -n rocketmq-namesrv1:9876;rocketmq-namesrv2:9876 --enable-proxy -c /home/rocketmq/rocketmq/conf/broker.conf
+    depends_on:
+      - rocketmq-namesrv1
+      - rocketmq-namesrv2
+    volumes:
+      - rocketmq-broker1-data:/home/rocketmq/store
+      - rocketmq-broker1-logs:/home/rocketmq/logs
+    networks:
+      - docker-stack-net
+
+  rocketmq-broker2:
+    image: apache/rocketmq:5.5.0
+    container_name: rocketmq-broker2
+    restart: unless-stopped
+    ports:
+      - "10912:10911"
+    environment:
+      NAMESRV_ADDR: "rocketmq-namesrv1:9876;rocketmq-namesrv2:9876"
+    command: sh mqbroker -n rocketmq-namesrv1:9876;rocketmq-namesrv2:9876 --enable-proxy -c /home/rocketmq/rocketmq/conf/broker.conf
+    depends_on:
+      - rocketmq-namesrv1
+      - rocketmq-namesrv2
+    volumes:
+      - rocketmq-broker2-data:/home/rocketmq/store
+      - rocketmq-broker2-logs:/home/rocketmq/logs
     networks:
       - docker-stack-net
 EOF
@@ -1033,6 +1486,7 @@ ES_PASS=${ES_PASS}
 NACOS_PASS=${NACOS_PASS}
 RABBIT_USER=${RABBIT_USER}
 RABBIT_PASS=${RABBIT_PASS}
+RABBIT_ERLANG_COOKIE=${RABBIT_ERLANG_COOKIE}
 KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 KEYCLOAK_PASS=${KEYCLOAK_PASS}
 XXLJOB_USER=${XXLJOB_USER}
@@ -1066,6 +1520,16 @@ EOF
                 gen_mysql >> "$COMPOSE_FILE"
                 add_volume "mysql-data"
                 ;;
+            mysql:master-slave)
+                gen_mysql_master_slave >> "$COMPOSE_FILE"
+                add_volume "mysql-master-data"
+                add_volume "mysql-slave-data"
+                ;;
+            mysql:dual-master)
+                gen_mysql_dual_master >> "$COMPOSE_FILE"
+                add_volume "mysql-master1-data"
+                add_volume "mysql-master2-data"
+                ;;
             postgresql)
                 gen_postgresql >> "$COMPOSE_FILE"
                 add_volume "postgresql-data"
@@ -1088,6 +1552,12 @@ EOF
                 gen_elasticsearch >> "$COMPOSE_FILE"
                 add_volume "elasticsearch-data"
                 ;;
+            elasticsearch:cluster)
+                gen_elasticsearch_cluster >> "$COMPOSE_FILE"
+                add_volume "es-node1-data"
+                add_volume "es-node2-data"
+                add_volume "es-node3-data"
+                ;;
             kibana)
                 gen_kibana >> "$COMPOSE_FILE"
                 ;;
@@ -1108,20 +1578,50 @@ EOF
                 gen_rabbitmq >> "$COMPOSE_FILE"
                 add_volume "rabbitmq-data"
                 ;;
+            rabbitmq:cluster)
+                gen_rabbitmq_cluster >> "$COMPOSE_FILE"
+                add_volume "rabbitmq1-data"
+                add_volume "rabbitmq2-data"
+                add_volume "rabbitmq3-data"
+                ;;
             kafka)
                 gen_kafka >> "$COMPOSE_FILE"
                 add_volume "kafka-data"
+                ;;
+            kafka:cluster)
+                gen_kafka_cluster >> "$COMPOSE_FILE"
+                add_volume "kafka1-data"
+                add_volume "kafka2-data"
+                add_volume "kafka3-data"
                 ;;
             zookeeper)
                 gen_zookeeper >> "$COMPOSE_FILE"
                 add_volume "zookeeper-data"
                 add_volume "zookeeper-logs"
                 ;;
+            zookeeper:cluster)
+                gen_zookeeper_cluster >> "$COMPOSE_FILE"
+                add_volume "zookeeper1-data"
+                add_volume "zookeeper1-logs"
+                add_volume "zookeeper2-data"
+                add_volume "zookeeper2-logs"
+                add_volume "zookeeper3-data"
+                add_volume "zookeeper3-logs"
+                ;;
             rocketmq)
                 gen_rocketmq >> "$COMPOSE_FILE"
                 add_volume "rocketmq-namesrv-logs"
                 add_volume "rocketmq-broker-data"
                 add_volume "rocketmq-broker-logs"
+                ;;
+            rocketmq:cluster)
+                gen_rocketmq_cluster >> "$COMPOSE_FILE"
+                add_volume "rocketmq-namesrv1-logs"
+                add_volume "rocketmq-namesrv2-logs"
+                add_volume "rocketmq-broker1-data"
+                add_volume "rocketmq-broker1-logs"
+                add_volume "rocketmq-broker2-data"
+                add_volume "rocketmq-broker2-logs"
                 ;;
             pulsar)
                 gen_pulsar >> "$COMPOSE_FILE"
@@ -1249,6 +1749,7 @@ cmd_deploy() {
         echo "  e. all-databases  (redis, mysql, postgresql, mongodb)"
         echo "  f. all-mq         (rabbitmq, kafka, rocketmq, zookeeper, pulsar)"
         echo "  g. storage        (minio, rustfs)"
+        echo "  h. cluster-mq     (zookeeper:cluster, kafka:cluster, rabbitmq:cluster)"
         echo ""
         read -p "Enter component names or preset (comma-separated): " components
 
@@ -1260,10 +1761,11 @@ cmd_deploy() {
             e) components="redis,mysql,postgresql,mongodb" ;;
             f) components="rabbitmq,kafka,rocketmq,zookeeper,pulsar" ;;
             g) components="minio,rustfs" ;;
+            h) components="zookeeper:cluster,kafka:cluster,rabbitmq:cluster" ;;
         esac
     fi
 
-    # Parse redis/mongodb modes
+    # Parse component modes (component:mode syntax)
     local parsed_components=""
     for comp in $(echo "$components" | tr ',' ' '); do
         if [[ "$comp" == *"redis:"* ]]; then
@@ -1276,6 +1778,24 @@ cmd_deploy() {
             else
                 comp="mongodb"
             fi
+        elif [[ "$comp" == *"mysql:"* ]]; then
+            local mysql_mode="${comp#mysql:}"
+            comp="mysql:${mysql_mode}"
+        elif [[ "$comp" == *"rabbitmq:"* ]]; then
+            local rabbit_mode="${comp#rabbitmq:}"
+            comp="rabbitmq:${rabbit_mode}"
+        elif [[ "$comp" == *"kafka:"* ]]; then
+            local kafka_mode="${comp#kafka:}"
+            comp="kafka:${kafka_mode}"
+        elif [[ "$comp" == *"zookeeper:"* ]]; then
+            local zk_mode="${comp#zookeeper:}"
+            comp="zookeeper:${zk_mode}"
+        elif [[ "$comp" == *"rocketmq:"* ]]; then
+            local rmq_mode="${comp#rocketmq:}"
+            comp="rocketmq:${rmq_mode}"
+        elif [[ "$comp" == *"elasticsearch:"* ]]; then
+            local es_mode="${comp#elasticsearch:}"
+            comp="elasticsearch:${es_mode}"
         fi
         parsed_components="$parsed_components $comp"
     done
@@ -1425,11 +1945,24 @@ Commands:
   help              Show this help
 
 Component format:
-  redis             Redis standalone (default)
-  redis:sentinel    Redis sentinel mode (1 master + 2 slaves + 1 sentinel)
-  redis:cluster     Redis cluster mode (6 nodes)
-  mongodb           MongoDB standalone (default)
-  mongodb:rs        MongoDB replica set (1 primary + 2 secondary)
+  redis              Redis standalone (default)
+  redis:sentinel     Redis sentinel mode (1 master + 2 slaves + 1 sentinel)
+  redis:cluster      Redis cluster mode (6 nodes)
+  mongodb            MongoDB standalone (default)
+  mongodb:rs         MongoDB replica set (1 primary + 2 secondary)
+  mysql              MySQL standalone (default)
+  mysql:master-slave MySQL master-slave replication (GTID-based)
+  mysql:dual-master  MySQL dual-master replication (GTID-based)
+  rabbitmq           RabbitMQ standalone (default)
+  rabbitmq:cluster   RabbitMQ cluster (3 nodes, shared erlang cookie)
+  kafka              Kafka standalone (default)
+  kafka:cluster      Kafka cluster (3 brokers, requires zookeeper:cluster)
+  zookeeper          ZooKeeper standalone (default)
+  zookeeper:cluster  ZooKeeper ensemble (3 nodes)
+  rocketmq           RocketMQ standalone (default)
+  rocketmq:cluster   RocketMQ cluster (2 namesrv + 2 brokers)
+  elasticsearch      Elasticsearch standalone (default)
+  elasticsearch:cluster Elasticsearch cluster (3 nodes)
 
 Presets (use in deploy prompt):
   dev-minimal       redis, mysql, minio
@@ -1438,11 +1971,14 @@ Presets (use in deploy prompt):
   elk               elasticsearch, kibana, logstash
   all-databases     redis, mysql, postgresql, mongodb
   all-mq            rabbitmq, kafka, rocketmq, zookeeper, pulsar
+  cluster-mq        zookeeper:cluster, kafka:cluster, rabbitmq:cluster
 
 Examples:
   $0 list
   $0 deploy redis,mysql,postgresql,minio
-  $0 deploy redis:sentinel,mysql,mongodb:rs
+  $0 deploy redis:sentinel,mysql:master-slave,mongodb:rs
+  $0 deploy zookeeper:cluster,kafka:cluster
+  $0 deploy mysql:dual-master,rabbitmq:cluster,elasticsearch:cluster
   $0 deploy              # Interactive mode
   $0 up
   $0 logs redis
