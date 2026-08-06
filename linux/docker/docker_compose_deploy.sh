@@ -1,7 +1,7 @@
 #!/bin/bash
 # Docker Compose Infrastructure Deployer
 # Deploy common dev/test infrastructure components via docker-compose
-# Supports: Redis, MySQL, PostgreSQL, MinIO, Elasticsearch, MongoDB, Nacos,
+# Supports: Redis, MySQL, PostgreSQL, MinIO, RustFS, Elasticsearch, MongoDB, Nacos,
 #   OpenResty, RabbitMQ, Kafka, RocketMQ, ZooKeeper, Pulsar, Kong,
 #   OpenSearch, SkyWalking, Prometheus, Grafana, Loki, Logstash, Kibana,
 #   Keycloak, XXL-Job, PowerJob, Sentinel Dashboard
@@ -53,6 +53,7 @@ declare -A COMPONENTS=(
     ["xxljob"]="xuxueli/xxl-job-admin:3.4.2"
     ["powerjob"]="powerjob/powerjob-server:v5.1.2"
     ["sentinel"]="bladex/sentinel-dashboard:1.8.9"
+    ["rustfs"]="rustfs/rustfs:latest"
 )
 
 # Component descriptions
@@ -82,6 +83,7 @@ declare -A DESCRIPTIONS=(
     ["xxljob"]="XXL-Job 3.4 - Distributed task scheduler"
     ["powerjob"]="PowerJob 5.1 - Distributed computing framework"
     ["sentinel"]="Sentinel 1.8 - Flow control & circuit breaker dashboard"
+    ["rustfs"]="RustFS - High-performance distributed object storage (S3-compatible)"
 )
 
 # Component categories
@@ -111,6 +113,7 @@ declare -A CATEGORIES=(
     ["xxljob"]="Scheduler"
     ["powerjob"]="Scheduler"
     ["sentinel"]="Resilience"
+    ["rustfs"]="Storage"
 )
 
 # Port assignments
@@ -140,6 +143,7 @@ declare -A PORTS=(
     ["xxljob"]="8089:8080"
     ["powerjob"]="7700:7700 10086:10086"
     ["sentinel"]="8858:8858"
+    ["rustfs"]="9002:9000 9003:9001"
 )
 
 # Default passwords
@@ -157,6 +161,8 @@ KEYCLOAK_ADMIN="admin"
 KEYCLOAK_PASS="Keycloak123!"
 XXLJOB_USER="admin"
 XXLJOB_PASS="123456"
+RUSTFS_ACCESS_KEY="rustfs"
+RUSTFS_SECRET_KEY="Rustfs123!"
 
 # Network
 NETWORK_NAME="docker-stack-net"
@@ -958,6 +964,30 @@ gen_sentinel() {
 EOF
 }
 
+gen_rustfs() {
+    cat << 'EOF'
+
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    restart: unless-stopped
+    ports:
+      - "9002:9000"
+      - "9003:9001"
+    environment:
+      - RUSTFS_ADDRESS=:9000
+      - RUSTFS_CONSOLE_ENABLE=true
+      - RUSTFS_CONSOLE_ADDRESS=0.0.0.0:9001
+      - RUSTFS_ACCESS_KEY=${RUSTFS_ACCESS_KEY}
+      - RUSTFS_SECRET_KEY=${RUSTFS_SECRET_KEY}
+    volumes:
+      - rustfs-data:/data
+      - rustfs-logs:/logs
+    networks:
+      - docker-stack-net
+EOF
+}
+
 # ==============================================================================
 # Volume name collector
 # ==============================================================================
@@ -1007,6 +1037,8 @@ KEYCLOAK_ADMIN=${KEYCLOAK_ADMIN}
 KEYCLOAK_PASS=${KEYCLOAK_PASS}
 XXLJOB_USER=${XXLJOB_USER}
 XXLJOB_PASS=${XXLJOB_PASS}
+RUSTFS_ACCESS_KEY=${RUSTFS_ACCESS_KEY}
+RUSTFS_SECRET_KEY=${RUSTFS_SECRET_KEY}
 EOF
 
     VOLUME_NAMES=""
@@ -1132,6 +1164,11 @@ EOF
             sentinel)
                 gen_sentinel >> "$COMPOSE_FILE"
                 ;;
+            rustfs)
+                gen_rustfs >> "$COMPOSE_FILE"
+                add_volume "rustfs-data"
+                add_volume "rustfs-logs"
+                ;;
             *)
                 warn "Unknown component: $comp, skipping"
                 ;;
@@ -1202,7 +1239,7 @@ cmd_deploy() {
         echo " 16. skywalking     17. prometheus     18. grafana"
         echo " 19. loki           20. logstash      21. kibana"
         echo " 22. keycloak       23. xxljob        24. powerjob"
-        echo " 25. sentinel"
+        echo " 25. sentinel       26. rustfs"
         echo ""
         echo "Presets:"
         echo "  a. dev-minimal    (redis, mysql, minio)"
@@ -1211,6 +1248,7 @@ cmd_deploy() {
         echo "  d. elk            (elasticsearch, kibana, logstash)"
         echo "  e. all-databases  (redis, mysql, postgresql, mongodb)"
         echo "  f. all-mq         (rabbitmq, kafka, rocketmq, zookeeper, pulsar)"
+        echo "  g. storage        (minio, rustfs)"
         echo ""
         read -p "Enter component names or preset (comma-separated): " components
 
@@ -1221,6 +1259,7 @@ cmd_deploy() {
             d) components="elasticsearch,kibana,logstash" ;;
             e) components="redis,mysql,postgresql,mongodb" ;;
             f) components="rabbitmq,kafka,rocketmq,zookeeper,pulsar" ;;
+            g) components="minio,rustfs" ;;
         esac
     fi
 
@@ -1363,6 +1402,7 @@ cmd_info() {
     echo "RabbitMQ:     $RABBIT_USER/$RABBIT_PASS"
     echo "Keycloak:     $KEYCLOAK_ADMIN/$KEYCLOAK_PASS"
     echo "Grafana:      admin/admin"
+    echo "RustFS:       $RUSTFS_ACCESS_KEY/$RUSTFS_SECRET_KEY"
     echo "=========================================="
 }
 

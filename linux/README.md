@@ -61,12 +61,14 @@
 | **log_analyzer.sh** | 日志分析器 | Auth/Nginx/系统日志分析、HTML报告生成 |
 | **error_summary.sh** | 错误汇总告警 | 多日志聚合、统计报表、邮件告警 |
 
-### 🐳 Docker基础设施类
+### 🐳 Docker基础设施类 (位于 `docker/` 子目录)
 
 | 脚本 | 功能 | 主要特性 |
 |------|------|---------|
-| **docker_install.sh** | Docker自动安装 | CentOS/Ubuntu自动检测、最新版安装、中国镜像源支持 |
-| **docker_compose_deploy.sh** | 基础设施一键部署 | 25+组件模板、单机/集群模式、预设方案、统一数据卷管理 |
+| **docker/docker_install.sh** | Docker自动安装 | CentOS/Ubuntu自动检测、最新版安装、中国镜像源支持 |
+| **docker/docker_compose_deploy.sh** | 基础设施一键部署 | 26+组件模板(含RustFS)、单机/集群模式、7种预设方案、统一数据卷管理 |
+| **docker/docker_cleaner.sh** | Docker资源清理 | 容器/镜像/卷/网络清理、磁盘使用统计 |
+| **docker/DEPLOYMENT_GUIDE.md** | 详细部署操作手册 | 完整安装/部署/使用/运维/故障排查文档 |
 
 ---
 
@@ -271,10 +273,12 @@ Docker资源清理
 
 ---
 
-### docker_install.sh
+### docker/docker_install.sh
 自动安装最新版Docker Engine和Docker Compose（支持CentOS/Ubuntu）
 
 ```bash
+cd docker/
+
 # 快速安装（默认官方源）
 sudo ./docker_install.sh -y
 
@@ -294,10 +298,12 @@ sudo ./docker_install.sh
 
 ---
 
-### docker_compose_deploy.sh
-通过Docker Compose一键部署25+基础设施组件
+### docker/docker_compose_deploy.sh
+通过Docker Compose一键部署26+基础设施组件（含RustFS）
 
 ```bash
+cd docker/
+
 # 查看所有可用组件
 ./docker_compose_deploy.sh list
 
@@ -305,7 +311,7 @@ sudo ./docker_install.sh
 ./docker_compose_deploy.sh deploy
 
 # 指定组件部署
-./docker_compose_deploy.sh deploy redis,mysql,postgresql,minio
+./docker_compose_deploy.sh deploy redis,mysql,postgresql,minio,rustfs
 
 # Redis哨兵模式 + MongoDB副本集
 ./docker_compose_deploy.sh deploy redis:sentinel,mysql,mongodb:rs
@@ -326,20 +332,21 @@ sudo ./docker_install.sh
 ```
 
 **预设方案（交互模式输入字母即可）：**
-- `dev-minimal`: redis, mysql, minio
-- `dev-full`: redis, mysql, postgresql, mongodb, minio, nacos, rabbitmq, kafka, zookeeper
-- `monitoring`: prometheus, grafana, loki
-- `elk`: elasticsearch, kibana, logstash
-- `all-databases`: redis, mysql, postgresql, mongodb
-- `all-mq`: rabbitmq, kafka, rocketmq, zookeeper, pulsar
+- `a. dev-minimal`: redis, mysql, minio
+- `b. dev-full`: redis, mysql, postgresql, mongodb, minio, nacos, rabbitmq, kafka, zookeeper
+- `c. monitoring`: prometheus, grafana, loki
+- `d. elk`: elasticsearch, kibana, logstash
+- `e. all-databases`: redis, mysql, postgresql, mongodb
+- `f. all-mq`: rabbitmq, kafka, rocketmq, zookeeper, pulsar
+- `g. storage`: minio, rustfs
 
-**支持的组件（25个）：**
+**支持的组件（26个）：**
 
 | 类别 | 组件 | 版本 |
 |------|------|------|
 | 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 |
 | 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 |
-| 存储 | MinIO | latest |
+| 存储 | MinIO, RustFS | latest |
 | 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 |
 | 协调 | ZooKeeper | 3.9 |
 | 网关 | OpenResty, Kong | 1.27, 3.9 |
@@ -352,6 +359,8 @@ sudo ./docker_install.sh
 **Redis部署模式：** standalone（单机）、sentinel（哨兵1主2从1哨兵）、cluster（6节点集群）
 **MongoDB部署模式：** standalone（单机）、rs（1主2从副本集）
 **数据卷统一挂载：** `~/docker-stack/data/` 目录下
+
+> 完整部署操作手册请参考: [docker/DEPLOYMENT_GUIDE.md](docker/DEPLOYMENT_GUIDE.md)
 
 ---
 
