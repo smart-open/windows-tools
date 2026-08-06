@@ -28,6 +28,7 @@
 | rm | 删除文件 | `rm file.txt`, `rm -rf dir` |
 | mkdir | 创建目录 | `mkdir newdir`, `mkdir -p a/b/c` |
 | touch | 创建空文件 | `touch newfile.txt` |
+| open | 打开资源管理器 | `open` (当前目录), `open C:\Users` (指定目录) |
 
 ### 文件查看和搜索
 
@@ -167,8 +168,8 @@ htop -Delay 1 -SortBy PID     # 1秒刷新，按PID排序
 
 ## 实现状态
 
-✅ 已实现（28个命令）：
-- **文件操作**: ls, pwd, cp, mv, rm, mkdir, touch
+✅ 已实现（29个命令）：
+- **文件操作**: ls, pwd, cp, mv, rm, mkdir, touch, **open**
 - **文件查看**: cat, head, tail, more, less, grep, wc, **awk**
 - **系统信息**: df, du, free, uptime
 - **进程管理**: ps, top, kill, **htop**

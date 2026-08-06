@@ -47,7 +47,7 @@ scripts/
 
 ## Windows 脚本
 
-### windows/tools/ - Linux风格命令工具集 (54个命令)
+### windows/tools/ - Linux风格命令工具集 (55个命令)
 
 在 Windows PowerShell 中使用 Linux 风格的常用命令。
 

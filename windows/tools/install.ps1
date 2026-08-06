@@ -12,10 +12,10 @@ if ($currentPath -notlike "*$toolsPath*") {
 }
 
 Write-Host ""
-Write-Host "Available commands (54 total):"
+Write-Host "Available commands (55 total):"
 Write-Host "  File: ls, ll, cat, head, tail, more, less, touch, rm, cp, mv, mkdir,"
 Write-Host "        pwd, find, tree, wc, grep, awk, sort, uniq, cut, tr, tee, xargs"
-Write-Host "        basename, dirname, realpath, which"
+Write-Host "        basename, dirname, realpath, which, open"
 Write-Host "  System: df, du, free, uptime, ps, top, htop, kill"
 Write-Host "  Network: ip, netstat, ss, dig, nc, traceroute"
 Write-Host "  Other: history, whoami, hostname, date, env, cal"
