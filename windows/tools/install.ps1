@@ -1,8 +1,4 @@
-<#
-.SYNOPSIS
-Install Linux-style tools to Windows PATH
-#>
-
+# Install Linux-style tools to Windows PATH
 $toolsPath = Split-Path -Parent $MyInvocation.MyCommand.Path
 $currentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 
@@ -16,12 +12,12 @@ if ($currentPath -notlike "*$toolsPath*") {
 }
 
 Write-Host ""
-Write-Host "Available commands:"
-Write-Host "  ls, du, df, free, top, uptime"
-Write-Host "  ps, kill, history, htop"
-Write-Host "  cat, grep, head, tail, wc, more, less, awk"
-Write-Host "  touch, pwd, cp, rm, mkdir, mv"
-Write-Host "  ip, netstat, ss, dig"
-Write-Host "  unzip, zip, wget, curl"
+Write-Host "Available commands (54 total):"
+Write-Host "  File: ls, ll, cat, head, tail, more, less, touch, rm, cp, mv, mkdir,"
+Write-Host "        pwd, find, tree, wc, grep, awk, sort, uniq, cut, tr, tee, xargs"
+Write-Host "        basename, dirname, realpath, which"
+Write-Host "  System: df, du, free, uptime, ps, top, htop, kill"
+Write-Host "  Network: ip, netstat, ss, dig, nc, traceroute"
+Write-Host "  Other: history, whoami, hostname, date, env, cal"
 Write-Host ""
-Write-Host "Usage: ps -n 20, ls -la, df -h, htop, dig google.com, etc."
+Write-Host "Usage: find . -Name *.ps1, tree -Level 2, sort file.txt, etc."
