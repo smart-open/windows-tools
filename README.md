@@ -12,7 +12,11 @@ scripts/
 │
 ├── windows/                     # Windows 脚本目录
 │   ├── Window Beyond Compare重置试用.bat  # BC试用期重置
-│   └── Window微信多开.bat                  # 微信多开工具
+│   ├── Window微信多开.bat                  # 微信多开工具
+│   └── tools/                             # Linux风格命令工具集
+│       ├── ls.ps1, du.ps1, df.ps1...
+│       ├── install.ps1                    # 安装脚本
+│       └── README.md                      # tools说明文档
 │
 └── linux/                       # Linux 脚本目录
     ├── system_diagnostic.sh               # 系统诊断脚本
@@ -57,6 +61,41 @@ scripts/
 - 最多支持同时启动10个微信实例
 
 **建议：** 快速启动多个微信app，随后一个一个登录即可
+
+---
+
+### 🛠️ windows/tools/ - Linux风格命令工具集
+
+在 Windows PowerShell 中使用 Linux 风格的常用命令。
+
+**包含命令（25+个）：**
+
+| 类别 | 命令 |
+|------|------|
+| 文件操作 | ls, pwd, cp, mv, rm, mkdir, touch |
+| 文件查看 | cat, head, tail, more, less, grep, wc |
+| 系统信息 | df, du, free, uptime |
+| 进程管理 | ps, top, kill |
+| 网络工具 | ip, netstat, ss |
+| 压缩下载 | zip, unzip, wget, curl |
+| 其他 | history |
+
+**安装使用：**
+```powershell
+cd windows/tools
+.\install.ps1
+```
+
+**使用示例：**
+```powershell
+ls -la        # 列出文件
+df -h         # 磁盘使用
+free -h       # 内存使用
+ps            # 进程列表
+grep pattern  # 搜索文本
+```
+
+详细说明请参考：`windows/tools/README.md`
 
 ---
 
@@ -106,6 +145,7 @@ chmod +x system_diagnostic.sh
 ### Windows
 - 所有批处理脚本均使用 UTF-8 编码，如遇中文乱码请确认编码设置
 - Beyond Compare 重置工具需要管理员权限修改注册表
+- tools/ 目录下的 PowerShell 脚本需要先运行 install.ps1 添加到 PATH
 
 ### Linux
 - 部分诊断功能需要 root 权限
