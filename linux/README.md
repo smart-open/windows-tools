@@ -346,7 +346,7 @@ cd docker/
 |------|------|------|
 | 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 |
 | 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 |
-| 存储 | MinIO, RustFS | latest, 1.0.0-alpha.69 |
+| 存储 | MinIO, RustFS | RELEASE.2025-10-15, 1.0.0-alpha.69 |
 | 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 |
 | 协调 | ZooKeeper | 3.9 |
 | 网关 | OpenResty, Kong | 1.27, 3.9 |
