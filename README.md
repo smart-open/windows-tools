@@ -119,7 +119,7 @@ sudo ./docker_install.sh -y --mirror china
 | 类别 | 组件 | 版本 | 集群模式 |
 |------|------|------|---------|
 | 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 | Redis: 哨兵/集群, Mongo: 副本集 |
-| 存储 | MinIO, RustFS | latest | RustFS 分布式 |
+| 存储 | MinIO, RustFS | latest, 1.0.0-alpha.69 | RustFS 分布式 |
 | 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 | - |
 | 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 | - |
 | 协调 | ZooKeeper | 3.9 | - |

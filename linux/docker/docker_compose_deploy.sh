@@ -53,7 +53,7 @@ declare -A COMPONENTS=(
     ["xxljob"]="xuxueli/xxl-job-admin:3.4.2"
     ["powerjob"]="powerjob/powerjob-server:v5.1.2"
     ["sentinel"]="bladex/sentinel-dashboard:1.8.9"
-    ["rustfs"]="rustfs/rustfs:latest"
+    ["rustfs"]="rustfs/rustfs:1.0.0-alpha.69"
 )
 
 # Component descriptions
@@ -968,7 +968,7 @@ gen_rustfs() {
     cat << 'EOF'
 
   rustfs:
-    image: rustfs/rustfs:latest
+    image: rustfs/rustfs:1.0.0-alpha.69
     container_name: rustfs
     restart: unless-stopped
     ports:
