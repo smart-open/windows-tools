@@ -40,6 +40,7 @@
 | less | 分页查看文件 | `less file.txt` (同more) |
 | grep | 搜索文本 | `grep "pattern" file.txt`, `grep -r "pattern" .` |
 | wc | 统计字数 | `wc file.txt`, `wc -l file.txt` (行数) |
+| awk | 文本处理(简化) | `awk '{print $1}' file.txt`, `cat file.txt | awk '{print $1}'` |
 
 ### 系统信息
 
@@ -56,6 +57,7 @@
 |------|---------|---------|
 | ps | 列出进程 | `ps`, `ps -a`, `ps -n 10` |
 | top | 进程资源排行 | `top`, `top -n 15` |
+| htop | 交互式进程查看 | `htop`, `htop -Delay 1` |
 | kill | 终止进程 | `kill 1234`, `kill -9 1234` (强制) |
 
 ### 网络工具
@@ -65,6 +67,7 @@
 | ip | 网络接口信息 | `ip`, `ip a` |
 | netstat | 网络连接 | `netstat`, `netstat -tlnp` |
 | ss | 套接字统计 | `ss`, `ss -t` (TCP) |
+| dig | DNS查询(简化) | `dig google.com`, `dig google.com MX`, `dig google.com NS` |
 
 ### 压缩和下载
 
@@ -81,6 +84,78 @@
 |------|---------|---------|
 | history | 命令历史 | `history`, `history 10` |
 
+---
+
+## 新命令详细说明
+
+### 🔍 dig - DNS查询工具
+
+**功能：** 查询DNS记录（简化版）
+
+**支持的查询类型：**
+- A - IPv4地址记录
+- MX - 邮件交换记录
+- NS - 域名服务器记录
+- TXT - 文本记录
+- CNAME - 别名记录
+
+**用法示例：**
+```powershell
+dig google.com              # 查询A记录
+dig google.com MX           # 查询邮件服务器
+dig google.com NS           # 查询域名服务器
+dig google.com TXT          # 查询TXT记录
+```
+
+---
+
+### 📝 awk - 文本处理工具
+
+**功能：** 简单的awk风格文本处理
+
+**支持的变量：**
+- `$0` - 整行内容
+- `$1, $2, $3...` - 第N个字段
+- `NF` - 字段数量
+- `NR` - 当前行号
+
+**用法示例：**
+```powershell
+# 打印第一列
+awk '{print $1}' file.txt
+
+# 打印行号和整行
+awk '{print NR ": " $0}' file.txt
+
+# 管道输入
+cat file.txt | awk '{print $1, $2}'
+```
+
+---
+
+### 🖥️ htop - 交互式进程查看器
+
+**功能：** 简化版htop，实时显示系统资源和进程
+
+**特点：**
+- CPU和内存使用进度条可视化
+- 按CPU排序的进程列表
+- 自动刷新（默认2秒）
+- 按Q键退出
+
+**用法示例：**
+```powershell
+htop                    # 启动htop（默认2秒刷新）
+htop -Delay 1          # 1秒刷新一次
+htop -ShowProcess 20   # 显示20个进程
+```
+
+**操作：**
+- `Q` 键：退出程序
+- 不支持滚动和交互排序（简化版）
+
+---
+
 ## 技术说明
 
 - 所有命令均使用 PowerShell 脚本实现，无需安装额外软件
@@ -89,22 +164,19 @@
 
 ## 实现状态
 
-✅ 可实现（无需外部依赖）：
-- ls, pwd, cp, mv, rm, mkdir, touch
-- cat, head, tail, more, less, grep, wc
-- df, du, free, uptime
-- ps, top, kill
-- ip, netstat, ss
-- zip, unzip, wget, curl
-- history
-
-❌ 难以/无法实现（需外部工具）：
-- dig (需额外工具)
-- htop (交互式界面复杂)
-- awk (文本处理复杂)
+✅ 已实现（28个命令）：
+- **文件操作**: ls, pwd, cp, mv, rm, mkdir, touch
+- **文件查看**: cat, head, tail, more, less, grep, wc, **awk**
+- **系统信息**: df, du, free, uptime
+- **进程管理**: ps, top, kill, **htop**
+- **网络工具**: ip, netstat, ss, **dig**
+- **压缩下载**: zip, unzip, wget, curl
+- **其他**: history
 
 ## 注意事项
 
 - 首次使用需要将 tools 目录添加到系统 PATH
 - 重启终端后才能使用新命令
 - 某些命令需要管理员权限（如 netstat -b）
+- htop 的交互式功能较为简化，仅支持刷新和退出
+- awk 仅支持基础的字段打印，不支持复杂模式匹配
