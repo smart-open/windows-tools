@@ -1,10 +1,29 @@
-# Windows 实用脚本集合
+# 实用脚本集合
 
-一个实用的 Windows 批处理脚本集合，包含常用的系统工具。
+一个跨平台的实用脚本集合，包含 Windows 和 Linux 常用工具。
 
-## 脚本列表
+## 目录结构
 
-### 🔧 Window Beyond Compare重置试用.bat
+```
+scripts/
+├── README.md                    # 主说明文档
+├── .gitignore                   # Git忽略文件
+├── LICENSE                      # 开源协议
+│
+├── windows/                     # Windows 脚本目录
+│   ├── Window Beyond Compare重置试用.bat  # BC试用期重置
+│   └── Window微信多开.bat                  # 微信多开工具
+│
+└── linux/                       # Linux 脚本目录
+    ├── system_diagnostic.sh               # 系统诊断脚本
+    └── system_diagnostic_readme.md        # 诊断脚本说明
+```
+
+---
+
+## Windows 脚本
+
+### 🔧 windows/Window Beyond Compare重置试用.bat
 
 **功能：** 重置 Beyond Compare 4.x/5.x 的试用期
 
@@ -21,7 +40,7 @@
 
 ---
 
-### 💬 Window微信多开.bat
+### 💬 windows/Window微信多开.bat
 
 **功能：** 快速启动多个微信实例
 
@@ -40,28 +59,59 @@
 
 ---
 
-## 文件结构
+## Linux 脚本
 
+### 🖥️ linux/system_diagnostic.sh
+
+**功能：** Linux 系统综合诊断工具
+
+**使用说明：**
+```bash
+chmod +x system_diagnostic.sh
+./system_diagnostic.sh
 ```
-scripts/
-├── README.md                           # 本文件
-├── Window Beyond Compare重置试用.bat  # BC试用期重置
-├── Window微信多开.bat                  # 微信多开工具
-├── system_diagnostic.sh               # 系统诊断脚本
-└── system_diagnostic_readme.md        # 诊断脚本说明
-```
+
+**诊断内容：**
+- 系统基本信息
+- CPU 使用情况
+- 内存使用情况
+- 磁盘空间分析
+- 网络连接状态
+- 进程运行情况
+- 系统日志分析
+
+详细说明请参考：`linux/system_diagnostic_readme.md`
+
+---
 
 ## 使用方法
 
-1. 下载对应 `.bat` 文件到本地
-2. 根据需要右键以管理员身份运行或直接运行
-3. 按照提示操作即可
+### Windows 脚本
+1. 进入 `windows/` 目录
+2. 下载对应 `.bat` 文件到本地
+3. 根据需要右键以管理员身份运行或直接运行
+4. 按照提示操作即可
+
+### Linux 脚本
+1. 进入 `linux/` 目录
+2. 下载对应 `.sh` 文件
+3. 添加执行权限：`chmod +x script.sh`
+4. 运行脚本：`./script.sh`
+
+---
 
 ## 注意事项
 
+### Windows
 - 所有批处理脚本均使用 UTF-8 编码，如遇中文乱码请确认编码设置
 - Beyond Compare 重置工具需要管理员权限修改注册表
 - 微信多开建议第一个登录后再启动第二个，避免冲突
+
+### Linux
+- 部分诊断功能需要 root 权限
+- 建议在测试环境中先验证脚本
+
+---
 
 ## 开源协议
 
