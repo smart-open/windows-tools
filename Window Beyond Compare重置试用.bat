@@ -1,118 +1,91 @@
 @echo off
-:: 设置UTF-8编码
 chcp 65001 >nul
 cls
+setlocal enabledelayedexpansion
+
 :: ============================================================================
-:: Beyond Compare 重置试用工具  
-:: 作者：Windows优化助手        
-:: 创建日期：2025-10-17 
-:: 功能描述：重置 Beyond Compare 4.x/5.x 试用期限   
-:: 系统要求：Windows 10/11  
-:: 使用说明：以管理员权限运行即可重置试用期 
+:: Beyond Compare 重置试用工具 v2.0
+:: 功能：重置 Beyond Compare 4.x/5.x 试用期限
+:: 使用：以管理员权限运行
 :: ============================================================================
 
-:: 设置变量存储BCompare路径
-set "bcompare_path="
+title Beyond Compare 试用重置工具
 
-:: 删除 Beyond Compare 试用标记（支持 4.x/5.x）
+echo ============================================
+echo    Beyond Compare 试用重置工具
+echo ============================================
+echo.
+
+:: 检查管理员权限
+NET SESSION >nul 2>&1
+if %errorLevel% NEQ 0 (
+    echo [提示] 正在请求管理员权限...
+    powershell -Command "Start-Process '%~f0' -Verb RunAs" >nul 2>&1
+    exit /b
+)
+
+:: 删除注册表中的试用标记
+echo [1/3] 正在清除试用标记...
 reg delete "HKEY_CURRENT_USER\Software\Scooter Software\Beyond Compare 5" /v CacheID /f >nul 2>&1
 reg delete "HKEY_CURRENT_USER\Software\Scooter Software\Beyond Compare 4" /v CacheID /f >nul 2>&1
+echo 注册表清理完成
 
-echo 正在搜索Beyond Compare安装路径...
+:: 自动搜索安装路径
+echo [2/3] 正在搜索安装路径...
+set "bc_path="
+set "bc_versions=5 4"
+set "drives=C D"
+set "archs=Program Files Program Files (x86)"
 
-:: 方法1: 搜索常见安装路径
-:: 检查64位默认路径
-if exist "C:\Program Files\Beyond Compare 5\BCompare.exe" (
-    set "bcompare_path=C:\Program Files\Beyond Compare 5\BCompare.exe"
-    echo 找到Beyond Compare 5 64位路径
-)
-
-:: 检查32位默认路径
-if exist "C:\Program Files (x86)\Beyond Compare 5\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=C:\Program Files (x86)\Beyond Compare 5\BCompare.exe"
-        echo 找到Beyond Compare 5 32位路径
-    )
-)
-
-:: 检查Beyond Compare 4的路径
-if exist "C:\Program Files\Beyond Compare 4\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=C:\Program Files\Beyond Compare 4\BCompare.exe"
-        echo 找到Beyond Compare 4 64位路径
-    )
-)
-
-if exist "C:\Program Files (x86)\Beyond Compare 4\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=C:\Program Files (x86)\Beyond Compare 4\BCompare.exe"
-        echo 找到Beyond Compare 4 32位路径
-    )
-)
-
-:: 检查D盘安装路径
-if exist "D:\Program Files\Beyond Compare 5\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=D:\Program Files\Beyond Compare 5\BCompare.exe"
-        echo 找到Beyond Compare 5 D盘64位路径
-    )
-)
-
-if exist "D:\Program Files (x86)\Beyond Compare 5\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=D:\Program Files (x86)\Beyond Compare 5\BCompare.exe"
-        echo 找到Beyond Compare 5 D盘32位路径
-    )
-)
-
-if exist "D:\Program Files\Beyond Compare 4\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=D:\Program Files\Beyond Compare 4\BCompare.exe"
-        echo 找到Beyond Compare 4 D盘64位路径
-    )
-)
-
-if exist "D:\Program Files (x86)\Beyond Compare 4\BCompare.exe" (
-    if not defined bcompare_path (
-        set "bcompare_path=D:\Program Files (x86)\Beyond Compare 4\BCompare.exe"
-        echo 找到Beyond Compare 4 D盘32位路径
-    )
-)
-
-:: 方法2: 搜索桌面快捷方式
-if not defined bcompare_path (
-    echo 检查桌面快捷方式...
-    set "desktop_dir=%USERPROFILE%\Desktop"
-    
-    :: 先检查是否有Beyond Compare快捷方式
-    dir "%desktop_dir%\Beyond Compare*.lnk" >nul 2>nul
-    if %errorlevel% equ 0 (
-        echo 找到Beyond Compare快捷方式
-        
-        :: 使用PowerShell获取快捷方式目标路径
-        powershell -Command "try { $wsh = New-Object -ComObject WScript.Shell; $shortcut = $wsh.CreateShortcut('%desktop_dir%\Beyond Compare*.lnk'); $shortcut.TargetPath } catch { }" > bc_path.txt 2>nul
-        
-        :: 读取结果
-        for /f "usebackq delims=" %%i in ("bc_path.txt") do (
-            if exist "%%i" (
-                if "%%~xi"==".exe" (
-                    set "bcompare_path=%%i"
-                    echo 从快捷方式获取路径成功
+for %%v in (%bc_versions%) do (
+    for %%d in (%drives%) do (
+        for %%a in (%archs%) do (
+            if not defined bc_path (
+                if exist "%%d:\%%a\Beyond Compare %%v\BCompare.exe" (
+                    set "bc_path=%%d:\%%a\Beyond Compare %%v\BCompare.exe"
+                    echo 找到 Beyond Compare %%v 安装路径
                 )
             )
         )
-        del bc_path.txt >nul 2>nul
     )
 )
 
-:: 启动Beyond Compare（如果找到路径）
-if defined bcompare_path (
-    echo 找到Beyond Compare路径: %bcompare_path%
-    echo 成功: 试用期已重置！软件启动中...
-    start "" "%bcompare_path%"
+:: 从桌面快捷方式搜索（如果未找到）
+if not defined bc_path (
+    for %%d in ("%USERPROFILE%\Desktop" "C:\Users\Public\Desktop") do (
+        if not defined bc_path (
+            for %%f in ("%%~d\Beyond Compare*.lnk") do (
+                for /f "usebackq delims=" %%p in (`powershell -Command "(New-Object -ComObject WScript.Shell).CreateShortcut('%%~ff').TargetPath" 2^>nul`) do (
+                    if exist "%%p" (
+                        set "bc_path=%%p"
+                        echo 从快捷方式找到安装路径
+                        goto :found
+                    )
+                )
+            )
+        )
+    )
+)
+:found
+
+:: 启动程序
+echo [3/3] 正在启动程序...
+if defined bc_path (
+    echo.
+    echo ============================================
+    echo 成功：试用期已重置！
+    echo 路径：!bc_path!
+    echo ============================================
+    start "" "!bc_path!"
 ) else (
-    echo 错误: 未找到Beyond Compare程序！
-    echo 提示: 请确认Beyond Compare已正确安装，或手动启动程序。
+    echo.
+    echo ============================================
+    echo 警告：未找到 Beyond Compare 安装路径
+    echo 提示：请手动启动程序
+    echo ============================================
 )
 
-pause
+echo.
+echo 按任意键退出...
+pause >nul
+exit /b
