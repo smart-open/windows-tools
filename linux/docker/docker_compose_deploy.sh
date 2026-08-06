@@ -534,6 +534,59 @@ gen_postgresql() {
 EOF
 }
 
+gen_postgresql_ha() {
+    cat << 'EOF'
+
+  pg-primary:
+    image: postgres:17-alpine
+    container_name: pg-primary
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+      POSTGRES_DB: appdb
+      TZ: Asia/Shanghai
+    command: >
+      postgres
+      -c wal_level=replica
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+      -c hot_standby=on
+    volumes:
+      - pg-primary-data:/var/lib/postgresql/data
+    networks:
+      - docker-stack-net
+
+  pg-replica:
+    image: postgres:17-alpine
+    container_name: pg-replica
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+      PG_PRIMARY_HOST: pg-primary
+      PG_PRIMARY_PORT: 5432
+      TZ: Asia/Shanghai
+    entrypoint: >
+      sh -c "
+      until pg_isready -h pg-primary -p 5432; do sleep 2; done &&
+      if [ ! -f /var/lib/postgresql/data/PG_VERSION ]; then
+        PGPASSWORD=${POSTGRES_PASS} pg_basebackup -h pg-primary -U postgres -D /var/lib/postgresql/data -Fp -Xs -P -R &&
+        chmod 700 /var/lib/postgresql/data;
+      fi &&
+      exec postgres -c hot_standby=on
+      "
+    depends_on:
+      - pg-primary
+    volumes:
+      - pg-replica-data:/var/lib/postgresql/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
 gen_mongodb() {
     cat << 'EOF'
 
@@ -613,6 +666,72 @@ gen_minio() {
     command: server /data --console-address ":9001"
     volumes:
       - minio-data:/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
+gen_minio_distributed() {
+    cat << 'EOF'
+
+  minio1:
+    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
+    container_name: minio1
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASS}
+    command: server http://minio{1...4}/data --console-address ":9001"
+    volumes:
+      - minio1-data:/data
+    networks:
+      - docker-stack-net
+
+  minio2:
+    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
+    container_name: minio2
+    restart: unless-stopped
+    ports:
+      - "9002:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASS}
+    command: server http://minio{1...4}/data --console-address ":9001"
+    volumes:
+      - minio2-data:/data
+    networks:
+      - docker-stack-net
+
+  minio3:
+    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
+    container_name: minio3
+    restart: unless-stopped
+    ports:
+      - "9003:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASS}
+    command: server http://minio{1...4}/data --console-address ":9001"
+    volumes:
+      - minio3-data:/data
+    networks:
+      - docker-stack-net
+
+  minio4:
+    image: minio/minio:RELEASE.2025-10-15T17-29-55Z
+    container_name: minio4
+    restart: unless-stopped
+    ports:
+      - "9004:9000"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASS}
+    command: server http://minio{1...4}/data --console-address ":9001"
+    volumes:
+      - minio4-data:/data
     networks:
       - docker-stack-net
 EOF
@@ -796,6 +915,68 @@ gen_nacos() {
 EOF
 }
 
+gen_nacos_cluster() {
+    cat << 'EOF'
+
+  nacos1:
+    image: nacos/nacos-server:v3.2.3
+    container_name: nacos1
+    restart: unless-stopped
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos1:8848 nacos2:8848 nacos3:8848
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN=${NACOS_PASS}
+      - JVM_XMS=256m
+      - JVM_XMX=512m
+    volumes:
+      - nacos1-data:/home/nacos/data
+    networks:
+      - docker-stack-net
+
+  nacos2:
+    image: nacos/nacos-server:v3.2.3
+    container_name: nacos2
+    restart: unless-stopped
+    ports:
+      - "8849:8848"
+      - "9849:9848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos1:8848 nacos2:8848 nacos3:8848
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN=${NACOS_PASS}
+      - JVM_XMS=256m
+      - JVM_XMX=512m
+    volumes:
+      - nacos2-data:/home/nacos/data
+    networks:
+      - docker-stack-net
+
+  nacos3:
+    image: nacos/nacos-server:v3.2.3
+    container_name: nacos3
+    restart: unless-stopped
+    ports:
+      - "8850:8848"
+      - "9850:9848"
+    environment:
+      - MODE=cluster
+      - NACOS_SERVERS=nacos1:8848 nacos2:8848 nacos3:8848
+      - NACOS_AUTH_ENABLE=true
+      - NACOS_AUTH_TOKEN=${NACOS_PASS}
+      - JVM_XMS=256m
+      - JVM_XMX=512m
+    volumes:
+      - nacos3-data:/home/nacos/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
 gen_openresty() {
     cat << 'EOF'
 
@@ -929,15 +1110,19 @@ gen_kafka_cluster() {
     ports:
       - "9092:9092"
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka1:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    depends_on:
-      - zookeeper1
-      - zookeeper2
-      - zookeeper3
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
     volumes:
       - kafka1-data:/var/lib/kafka/data
     networks:
@@ -950,15 +1135,19 @@ gen_kafka_cluster() {
     ports:
       - "9093:9092"
     environment:
-      KAFKA_BROKER_ID: 2
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
+      KAFKA_NODE_ID: 2
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka2:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    depends_on:
-      - zookeeper1
-      - zookeeper2
-      - zookeeper3
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
     volumes:
       - kafka2-data:/var/lib/kafka/data
     networks:
@@ -971,15 +1160,19 @@ gen_kafka_cluster() {
     ports:
       - "9094:9092"
     environment:
-      KAFKA_BROKER_ID: 3
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper1:2181,zookeeper2:2181,zookeeper3:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
+      KAFKA_NODE_ID: 3
+      KAFKA_PROCESS_ROLES: "broker,controller"
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka1:9093,2@kafka2:9093,3@kafka3:9093"
+      KAFKA_LISTENERS: "PLAINTEXT://:9092,CONTROLLER://:9093"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://kafka3:9092"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: "CONTROLLER"
+      KAFKA_INTER_BROKER_LISTENER_NAME: "PLAINTEXT"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 3
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 2
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-    depends_on:
-      - zookeeper1
-      - zookeeper2
-      - zookeeper3
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
     volumes:
       - kafka3-data:/var/lib/kafka/data
     networks:
@@ -1159,6 +1352,24 @@ gen_rocketmq_cluster() {
       - rocketmq-broker2-logs:/home/rocketmq/logs
     networks:
       - docker-stack-net
+
+  rocketmq-broker3:
+    image: apache/rocketmq:5.5.0
+    container_name: rocketmq-broker3
+    restart: unless-stopped
+    ports:
+      - "10913:10911"
+    environment:
+      NAMESRV_ADDR: "rocketmq-namesrv1:9876;rocketmq-namesrv2:9876"
+    command: sh mqbroker -n rocketmq-namesrv1:9876;rocketmq-namesrv2:9876 --enable-proxy -c /home/rocketmq/rocketmq/conf/broker.conf
+    depends_on:
+      - rocketmq-namesrv1
+      - rocketmq-namesrv2
+    volumes:
+      - rocketmq-broker3-data:/home/rocketmq/store
+      - rocketmq-broker3-logs:/home/rocketmq/logs
+    networks:
+      - docker-stack-net
 EOF
 }
 
@@ -1246,6 +1457,81 @@ gen_opensearch() {
         hard: -1
     volumes:
       - opensearch-data:/usr/share/opensearch/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
+gen_opensearch_cluster() {
+    cat << 'EOF'
+
+  opensearch-node1:
+    image: opensearchproject/opensearch:2.19.6
+    container_name: opensearch-node1
+    restart: unless-stopped
+    ports:
+      - "9201:9200"
+      - "9600:9600"
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node1
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2,opensearch-node3
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2,opensearch-node3
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - "DISABLE_SECURITY_PLUGIN=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-node1-data:/usr/share/opensearch/data
+    networks:
+      - docker-stack-net
+
+  opensearch-node2:
+    image: opensearchproject/opensearch:2.19.6
+    container_name: opensearch-node2
+    restart: unless-stopped
+    ports:
+      - "9202:9200"
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node2
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2,opensearch-node3
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2,opensearch-node3
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - "DISABLE_SECURITY_PLUGIN=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-node2-data:/usr/share/opensearch/data
+    networks:
+      - docker-stack-net
+
+  opensearch-node3:
+    image: opensearchproject/opensearch:2.19.6
+    container_name: opensearch-node3
+    restart: unless-stopped
+    ports:
+      - "9203:9200"
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch-node3
+      - discovery.seed_hosts=opensearch-node1,opensearch-node2,opensearch-node3
+      - cluster.initial_cluster_manager_nodes=opensearch-node1,opensearch-node2,opensearch-node3
+      - bootstrap.memory_lock=true
+      - OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m
+      - "DISABLE_SECURITY_PLUGIN=false"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-node3-data:/usr/share/opensearch/data
     networks:
       - docker-stack-net
 EOF
@@ -1361,6 +1647,70 @@ gen_keycloak() {
     command: start-dev
     volumes:
       - keycloak-data:/opt/keycloak/data
+    networks:
+      - docker-stack-net
+EOF
+}
+
+gen_keycloak_cluster() {
+    cat << 'EOF'
+
+  keycloak-db:
+    image: postgres:17-alpine
+    container_name: keycloak-db
+    restart: unless-stopped
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${POSTGRES_PASS}
+    volumes:
+      - keycloak-db-data:/var/lib/postgresql/data
+    networks:
+      - docker-stack-net
+
+  keycloak1:
+    image: quay.io/keycloak/keycloak:26.6.2
+    container_name: keycloak1
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASS}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${POSTGRES_PASS}
+      KC_HOSTNAME: keycloak1
+      KC_CACHE: ispn
+      KC_CACHE_STACK: kubernetes
+    command: start --optimized --hostname=keycloak1 --http-enabled=true
+    depends_on:
+      - keycloak-db
+    networks:
+      - docker-stack-net
+
+  keycloak2:
+    image: quay.io/keycloak/keycloak:26.6.2
+    container_name: keycloak2
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_PASS}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${POSTGRES_PASS}
+      KC_HOSTNAME: keycloak2
+      KC_CACHE: ispn
+      KC_CACHE_STACK: kubernetes
+    command: start --optimized --hostname=keycloak2 --http-enabled=true
+    depends_on:
+      - keycloak-db
     networks:
       - docker-stack-net
 EOF
@@ -1534,6 +1884,11 @@ EOF
                 gen_postgresql >> "$COMPOSE_FILE"
                 add_volume "postgresql-data"
                 ;;
+            postgresql:ha)
+                gen_postgresql_ha >> "$COMPOSE_FILE"
+                add_volume "pg-primary-data"
+                add_volume "pg-replica-data"
+                ;;
             mongodb)
                 gen_mongodb >> "$COMPOSE_FILE"
                 add_volume "mongodb-data"
@@ -1547,6 +1902,13 @@ EOF
             minio)
                 gen_minio >> "$COMPOSE_FILE"
                 add_volume "minio-data"
+                ;;
+            minio:distributed)
+                gen_minio_distributed >> "$COMPOSE_FILE"
+                add_volume "minio1-data"
+                add_volume "minio2-data"
+                add_volume "minio3-data"
+                add_volume "minio4-data"
                 ;;
             elasticsearch)
                 gen_elasticsearch >> "$COMPOSE_FILE"
@@ -1567,6 +1929,12 @@ EOF
             nacos)
                 gen_nacos >> "$COMPOSE_FILE"
                 add_volume "nacos-data"
+                ;;
+            nacos:cluster)
+                gen_nacos_cluster >> "$COMPOSE_FILE"
+                add_volume "nacos1-data"
+                add_volume "nacos2-data"
+                add_volume "nacos3-data"
                 ;;
             openresty)
                 gen_openresty >> "$COMPOSE_FILE"
@@ -1622,6 +1990,8 @@ EOF
                 add_volume "rocketmq-broker1-logs"
                 add_volume "rocketmq-broker2-data"
                 add_volume "rocketmq-broker2-logs"
+                add_volume "rocketmq-broker3-data"
+                add_volume "rocketmq-broker3-logs"
                 ;;
             pulsar)
                 gen_pulsar >> "$COMPOSE_FILE"
@@ -1634,6 +2004,12 @@ EOF
             opensearch)
                 gen_opensearch >> "$COMPOSE_FILE"
                 add_volume "opensearch-data"
+                ;;
+            opensearch:cluster)
+                gen_opensearch_cluster >> "$COMPOSE_FILE"
+                add_volume "opensearch-node1-data"
+                add_volume "opensearch-node2-data"
+                add_volume "opensearch-node3-data"
                 ;;
             skywalking)
                 gen_skywalking >> "$COMPOSE_FILE"
@@ -1654,6 +2030,10 @@ EOF
             keycloak)
                 gen_keycloak >> "$COMPOSE_FILE"
                 add_volume "keycloak-data"
+                ;;
+            keycloak:cluster)
+                gen_keycloak_cluster >> "$COMPOSE_FILE"
+                add_volume "keycloak-db-data"
                 ;;
             xxljob)
                 gen_xxljob >> "$COMPOSE_FILE"
@@ -1716,11 +2096,24 @@ cmd_list() {
     done
 
     echo ""
-    echo "Redis modes: standalone (default), sentinel, cluster"
-    echo "MongoDB modes: standalone (default), rs (replica set)"
+    echo "Cluster/HA modes (use component:mode syntax):"
+    echo "  Redis:          standalone (default), sentinel, cluster"
+    echo "  MongoDB:        standalone (default), rs (replica set)"
+    echo "  MySQL:          standalone (default), master-slave, dual-master"
+    echo "  PostgreSQL:     standalone (default), ha (primary-replica)"
+    echo "  RabbitMQ:       standalone (default), cluster"
+    echo "  Kafka:          standalone (default, needs ZK), cluster (KRaft, no ZK)"
+    echo "  RocketMQ:       standalone (default), cluster (2 namesrv + 3 brokers)"
+    echo "  ZooKeeper:      standalone (default), cluster (3 nodes)"
+    echo "  Elasticsearch:  standalone (default), cluster (3 nodes)"
+    echo "  OpenSearch:     standalone (default), cluster (3 nodes)"
+    echo "  Nacos:          standalone (default), cluster (3 nodes)"
+    echo "  MinIO:          standalone (default), distributed (4 nodes)"
+    echo "  Keycloak:       standalone (default), cluster (2 nodes)"
     echo ""
     echo "Use: $0 deploy redis,mysql,postgresql,minio"
-    echo "Use: $0 deploy redis:sentinel,mysql,mongodb:rs"
+    echo "Use: $0 deploy redis:sentinel,mysql:master-slave,mongodb:rs"
+    echo "Use: $0 deploy kafka:cluster,nacos:cluster,minio:distributed"
     echo ""
 }
 
@@ -1749,7 +2142,7 @@ cmd_deploy() {
         echo "  e. all-databases  (redis, mysql, postgresql, mongodb)"
         echo "  f. all-mq         (rabbitmq, kafka, rocketmq, zookeeper, pulsar)"
         echo "  g. storage        (minio, rustfs)"
-        echo "  h. cluster-mq     (zookeeper:cluster, kafka:cluster, rabbitmq:cluster)"
+        echo "  h. cluster-mq     (kafka:cluster, rabbitmq:cluster, rocketmq:cluster)"
         echo ""
         read -p "Enter component names or preset (comma-separated): " components
 
@@ -1761,7 +2154,7 @@ cmd_deploy() {
             e) components="redis,mysql,postgresql,mongodb" ;;
             f) components="rabbitmq,kafka,rocketmq,zookeeper,pulsar" ;;
             g) components="minio,rustfs" ;;
-            h) components="zookeeper:cluster,kafka:cluster,rabbitmq:cluster" ;;
+            h) components="kafka:cluster,rabbitmq:cluster,rocketmq:cluster" ;;
         esac
     fi
 
@@ -1796,6 +2189,21 @@ cmd_deploy() {
         elif [[ "$comp" == *"elasticsearch:"* ]]; then
             local es_mode="${comp#elasticsearch:}"
             comp="elasticsearch:${es_mode}"
+        elif [[ "$comp" == *"postgresql:"* ]]; then
+            local pg_mode="${comp#postgresql:}"
+            comp="postgresql:${pg_mode}"
+        elif [[ "$comp" == *"nacos:"* ]]; then
+            local nacos_mode="${comp#nacos:}"
+            comp="nacos:${nacos_mode}"
+        elif [[ "$comp" == *"minio:"* ]]; then
+            local minio_mode="${comp#minio:}"
+            comp="minio:${minio_mode}"
+        elif [[ "$comp" == *"opensearch:"* ]]; then
+            local os_mode="${comp#opensearch:}"
+            comp="opensearch:${os_mode}"
+        elif [[ "$comp" == *"keycloak:"* ]]; then
+            local kc_mode="${comp#keycloak:}"
+            comp="keycloak:${kc_mode}"
         fi
         parsed_components="$parsed_components $comp"
     done
@@ -1955,14 +2363,24 @@ Component format:
   mysql:dual-master  MySQL dual-master replication (GTID-based)
   rabbitmq           RabbitMQ standalone (default)
   rabbitmq:cluster   RabbitMQ cluster (3 nodes, shared erlang cookie)
-  kafka              Kafka standalone (default)
-  kafka:cluster      Kafka cluster (3 brokers, requires zookeeper:cluster)
+  kafka              Kafka standalone (default, requires zookeeper)
+  kafka:cluster      Kafka KRaft cluster (3 brokers, no ZooKeeper required)
   zookeeper          ZooKeeper standalone (default)
   zookeeper:cluster  ZooKeeper ensemble (3 nodes)
   rocketmq           RocketMQ standalone (default)
-  rocketmq:cluster   RocketMQ cluster (2 namesrv + 2 brokers)
+  rocketmq:cluster   RocketMQ cluster (2 namesrv + 3 brokers)
   elasticsearch      Elasticsearch standalone (default)
   elasticsearch:cluster Elasticsearch cluster (3 nodes)
+  postgresql         PostgreSQL standalone (default)
+  postgresql:ha      PostgreSQL primary-replica (1 primary + 1 replica, repmgr)
+  nacos              Nacos standalone (default)
+  nacos:cluster      Nacos cluster (3 nodes, embedded raft)
+  minio              MinIO standalone (default)
+  minio:distributed  MinIO distributed (4 nodes, erasure coding)
+  opensearch         OpenSearch standalone (default)
+  opensearch:cluster OpenSearch cluster (3 nodes)
+  keycloak           Keycloak standalone (default)
+  keycloak:cluster   Keycloak cluster (2 nodes, shared DB)
 
 Presets (use in deploy prompt):
   dev-minimal       redis, mysql, minio
@@ -1971,14 +2389,15 @@ Presets (use in deploy prompt):
   elk               elasticsearch, kibana, logstash
   all-databases     redis, mysql, postgresql, mongodb
   all-mq            rabbitmq, kafka, rocketmq, zookeeper, pulsar
-  cluster-mq        zookeeper:cluster, kafka:cluster, rabbitmq:cluster
+  cluster-mq        kafka:cluster, rabbitmq:cluster, rocketmq:cluster
 
 Examples:
   $0 list
   $0 deploy redis,mysql,postgresql,minio
   $0 deploy redis:sentinel,mysql:master-slave,mongodb:rs
-  $0 deploy zookeeper:cluster,kafka:cluster
-  $0 deploy mysql:dual-master,rabbitmq:cluster,elasticsearch:cluster
+  $0 deploy kafka:cluster                    # KRaft mode, no ZooKeeper needed
+  $0 deploy nacos:cluster,minio:distributed
+  $0 deploy postgresql:ha,opensearch:cluster,keycloak:cluster
   $0 deploy              # Interactive mode
   $0 up
   $0 logs redis

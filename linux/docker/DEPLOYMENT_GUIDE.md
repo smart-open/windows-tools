@@ -180,6 +180,7 @@ rustfs           Storage             RustFS - High-performance distributed objec
 | e | all-databases | redis, mysql, postgresql, mongodb | 全部数据库 |
 | f | all-mq | rabbitmq, kafka, rocketmq, zookeeper, pulsar | 全部消息队列 |
 | g | storage | minio, rustfs | 对象存储 |
+| h | cluster-mq | kafka:cluster, rabbitmq:cluster, rocketmq:cluster | 消息队列集群 |
 
 **方式二：指定组件部署**
 
@@ -196,8 +197,20 @@ rustfs           Storage             RustFS - High-performance distributed objec
 # MongoDB 副本集
 ./docker_compose_deploy.sh deploy mongodb:rs,mysql
 
+# Kafka KRaft 集群（无需 ZooKeeper）
+./docker_compose_deploy.sh deploy kafka:cluster
+
+# MySQL 主从 + PostgreSQL 主从
+./docker_compose_deploy.sh deploy mysql:master-slave,postgresql:ha
+
+# Nacos 集群 + MinIO 分布式
+./docker_compose_deploy.sh deploy nacos:cluster,minio:distributed
+
+# OpenSearch 集群 + Keycloak 集群
+./docker_compose_deploy.sh deploy opensearch:cluster,keycloak:cluster
+
 # 组合使用
-./docker_compose_deploy.sh deploy redis:sentinel,mysql,mongodb:rs,nacos,rabbitmq
+./docker_compose_deploy.sh deploy redis:sentinel,mysql,mongodb:rs,nacos:cluster,rabbitmq:cluster
 ```
 
 ### 3.3 部署流程说明

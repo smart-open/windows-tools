@@ -118,17 +118,17 @@ sudo ./docker_install.sh -y --mirror china
 
 | 类别 | 组件 | 版本 | 集群模式 |
 |------|------|------|---------|
-| 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 | Redis: 哨兵/集群, Mongo: 副本集 |
-| 存储 | MinIO, RustFS | RELEASE.2025-10-15, 1.0.0-alpha.69 | RustFS 分布式 |
-| 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 | - |
-| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 | - |
-| 协调 | ZooKeeper | 3.9 | - |
+| 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 | Redis: 哨兵/集群, MySQL: 主从/双主, PG: 主从, Mongo: 副本集 |
+| 存储 | MinIO, RustFS | RELEASE.2025-10-15, 1.0.0-alpha.69 | MinIO: 分布式(4节点) |
+| 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 | ES: 集群(3节点), OS: 集群(3节点) |
+| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3 (KRaft), 5.5, 4.2 | RabbitMQ: 集群, Kafka: KRaft集群, RocketMQ: 集群(3Broker) |
+| 协调 | ZooKeeper | 3.9 | ZooKeeper: 集群(3节点) |
 | 网关 | OpenResty, Kong | 1.27, 3.9 | - |
 | 监控 | Prometheus, Grafana, Loki, SkyWalking | 3.13, 12.4, 3.7, 10.4 | - |
 | 日志 | Logstash, Kibana | 8.19 | - |
-| 安全 | Keycloak, Sentinel | 26.6, 1.8 | - |
+| 安全 | Keycloak, Sentinel | 26.6, 1.8 | Keycloak: 集群(2节点,共享DB) |
 | 调度 | XXL-Job, PowerJob | 3.4, 5.1 | - |
-| 注册中心 | Nacos | 3.2 | - |
+| 注册中心 | Nacos | 3.2 | Nacos: 集群(3节点) |
 
 #### 预设方案
 
@@ -141,6 +141,7 @@ sudo ./docker_install.sh -y --mirror china
 | all-databases | redis, mysql, postgresql, mongodb |
 | all-mq | rabbitmq, kafka, rocketmq, zookeeper, pulsar |
 | storage | minio, rustfs |
+| cluster-mq | kafka:cluster, rabbitmq:cluster, rocketmq:cluster |
 
 #### 详细文档
 

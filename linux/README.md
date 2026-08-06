@@ -66,7 +66,7 @@
 | 脚本 | 功能 | 主要特性 |
 |------|------|---------|
 | **docker/docker_install.sh** | Docker自动安装 | CentOS/Ubuntu自动检测、最新版安装、中国镜像源支持 |
-| **docker/docker_compose_deploy.sh** | 基础设施一键部署 | 26+组件模板(含RustFS)、单机/集群模式、7种预设方案、统一数据卷管理 |
+| **docker/docker_compose_deploy.sh** | 基础设施一键部署 | 26+组件模板(含RustFS)、单机/集群模式(15种HA)、8种预设方案、统一数据卷管理 |
 | **docker/docker_cleaner.sh** | Docker资源清理 | 容器/镜像/卷/网络清理、磁盘使用统计 |
 | **docker/DEPLOYMENT_GUIDE.md** | 详细部署操作手册 | 完整安装/部署/使用/运维/故障排查文档 |
 
@@ -316,6 +316,15 @@ cd docker/
 # Redis哨兵模式 + MongoDB副本集
 ./docker_compose_deploy.sh deploy redis:sentinel,mysql,mongodb:rs
 
+# Kafka KRaft集群（无需ZooKeeper）
+./docker_compose_deploy.sh deploy kafka:cluster
+
+# Nacos集群 + MinIO分布式
+./docker_compose_deploy.sh deploy nacos:cluster,minio:distributed
+
+# PostgreSQL主从 + OpenSearch集群 + Keycloak集群
+./docker_compose_deploy.sh deploy postgresql:ha,opensearch:cluster,keycloak:cluster
+
 # 启动/停止/查看状态
 ./docker_compose_deploy.sh up
 ./docker_compose_deploy.sh down
@@ -339,6 +348,7 @@ cd docker/
 - `e. all-databases`: redis, mysql, postgresql, mongodb
 - `f. all-mq`: rabbitmq, kafka, rocketmq, zookeeper, pulsar
 - `g. storage`: minio, rustfs
+- `h. cluster-mq`: kafka:cluster, rabbitmq:cluster, rocketmq:cluster
 
 **支持的组件（26个）：**
 
@@ -347,7 +357,7 @@ cd docker/
 | 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 |
 | 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 |
 | 存储 | MinIO, RustFS | RELEASE.2025-10-15, 1.0.0-alpha.69 |
-| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 |
+| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3 (KRaft), 5.5, 4.2 |
 | 协调 | ZooKeeper | 3.9 |
 | 网关 | OpenResty, Kong | 1.27, 3.9 |
 | 监控 | Prometheus, Grafana, Loki, SkyWalking | 3.13, 12.4, 3.7, 10.4 |
@@ -356,9 +366,25 @@ cd docker/
 | 调度 | XXL-Job, PowerJob | 3.4, 5.1 |
 | 注册中心 | Nacos | 3.2 |
 
-**Redis部署模式：** standalone（单机）、sentinel（哨兵1主2从1哨兵）、cluster（6节点集群）
-**MongoDB部署模式：** standalone（单机）、rs（1主2从副本集）
-**数据卷统一挂载：** `~/docker-stack/data/` 目录下
+**集群/高可用模式（15种）：**
+
+| 组件 | 模式 | 说明 |
+|------|------|------|
+| Redis | `redis:sentinel` / `redis:cluster` | 哨兵(1主2从1哨兵) / 集群(6节点) |
+| MySQL | `mysql:master-slave` / `mysql:dual-master` | 主从复制(GTID) / 双主互备(GTID) |
+| PostgreSQL | `postgresql:ha` | 主从复制(流复制) |
+| MongoDB | `mongodb:rs` | 副本集(1主2从) |
+| RabbitMQ | `rabbitmq:cluster` | 集群(3节点) |
+| Kafka | `kafka:cluster` | KRaft集群(3 Broker，无需ZooKeeper) |
+| RocketMQ | `rocketmq:cluster` | 集群(2 NameServer + 3 Broker) |
+| ZooKeeper | `zookeeper:cluster` | 集群(3节点) |
+| Elasticsearch | `elasticsearch:cluster` | 集群(3节点) |
+| OpenSearch | `opensearch:cluster` | 集群(3节点) |
+| Nacos | `nacos:cluster` | 集群(3节点) |
+| MinIO | `minio:distributed` | 分布式(4节点，纠删码) |
+| Keycloak | `keycloak:cluster` | 集群(2节点，共享PostgreSQL) |
+
+**预设方案：**
 
 > 完整部署操作手册请参考: [docker/DEPLOYMENT_GUIDE.md](docker/DEPLOYMENT_GUIDE.md)
 

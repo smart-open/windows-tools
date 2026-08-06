@@ -41,6 +41,15 @@ docker compose version
 # Redis 哨兵 + MongoDB 副本集
 ./docker_compose_deploy.sh deploy redis:sentinel,mysql,mongodb:rs
 
+# Kafka KRaft 集群（无需 ZooKeeper）
+./docker_compose_deploy.sh deploy kafka:cluster
+
+# Nacos 集群 + MinIO 分布式
+./docker_compose_deploy.sh deploy nacos:cluster,minio:distributed
+
+# PostgreSQL 主从 + OpenSearch 集群 + Keycloak 集群
+./docker_compose_deploy.sh deploy postgresql:ha,opensearch:cluster,keycloak:cluster
+
 # 启动/停止/状态
 ./docker_compose_deploy.sh up
 ./docker_compose_deploy.sh down
@@ -67,7 +76,7 @@ docker compose version
 | 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 |
 | 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 |
 | 存储 | MinIO, RustFS | RELEASE.2025-10-15, 1.0.0-alpha.69 |
-| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 |
+| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3 (KRaft), 5.5, 4.2 |
 | 协调 | ZooKeeper | 3.9 |
 | 网关 | OpenResty, Kong | 1.27, 3.9 |
 | 监控 | Prometheus, Grafana, Loki, SkyWalking | 3.13, 12.4, 3.7, 10.4 |
@@ -75,6 +84,26 @@ docker compose version
 | 安全 | Keycloak, Sentinel | 26.6, 1.8 |
 | 调度 | XXL-Job, PowerJob | 3.4, 5.1 |
 | 注册中心 | Nacos | 3.2 |
+
+## 集群/高可用模式
+
+| 组件 | 模式 | 说明 |
+|------|------|------|
+| Redis | `redis:sentinel` | 哨兵模式（1主2从1哨兵） |
+| Redis | `redis:cluster` | 集群模式（6节点） |
+| MySQL | `mysql:master-slave` | 主从复制（GTID） |
+| MySQL | `mysql:dual-master` | 双主互备（GTID） |
+| PostgreSQL | `postgresql:ha` | 主从复制（流复制，pg_basebackup） |
+| MongoDB | `mongodb:rs` | 副本集（1主2从） |
+| RabbitMQ | `rabbitmq:cluster` | 集群（3节点，共享 Erlang Cookie） |
+| Kafka | `kafka:cluster` | KRaft 集群（3 Broker，无需 ZooKeeper） |
+| RocketMQ | `rocketmq:cluster` | 集群（2 NameServer + 3 Broker） |
+| ZooKeeper | `zookeeper:cluster` | 集群（3节点） |
+| Elasticsearch | `elasticsearch:cluster` | 集群（3节点） |
+| OpenSearch | `opensearch:cluster` | 集群（3节点） |
+| Nacos | `nacos:cluster` | 集群（3节点，Raft 共识） |
+| MinIO | `minio:distributed` | 分布式（4节点，纠删码） |
+| Keycloak | `keycloak:cluster` | 集群（2节点，共享 PostgreSQL） |
 
 ## 预设方案
 
@@ -87,6 +116,7 @@ docker compose version
 | all-databases | redis, mysql, postgresql, mongodb |
 | all-mq | rabbitmq, kafka, rocketmq, zookeeper, pulsar |
 | storage | minio, rustfs |
+| cluster-mq | kafka:cluster, rabbitmq:cluster, rocketmq:cluster |
 
 ## 数据目录
 
