@@ -1,14 +1,10 @@
-<#
-.SYNOPSIS
-Create zip archive (Linux zip style)
-#>
-
+# Create zip archive (Linux zip style)
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$Archive,
     [Parameter(Mandatory = $true, Position = 1)]
     [string]$Path,
-    [switch]$r  # 递归
+    [switch]$r
 )
 
 Compress-Archive -Path $Path -DestinationPath $Archive -Force:$r

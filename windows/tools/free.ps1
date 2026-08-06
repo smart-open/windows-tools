@@ -1,10 +1,7 @@
-<#
-.SYNOPSIS
-Show memory usage (Linux free style)
-#>
-
+# Show memory usage (Linux free style)
 param(
-    [switch]$h  # 人类可读格式
+    [switch]$h,
+    [switch]$m
 )
 
 $os = Get-CimInstance Win32_OperatingSystem
@@ -30,13 +27,20 @@ if ($h) {
     $pageTotalFmt = Format-Size $pageTotal
     $pageUsedFmt = Format-Size $pageUsed
     $pageFreeFmt = Format-Size $pageFree
-} else {
+} elseif ($m) {
     $totalFmt = [math]::Round($total / 1MB)
     $usedFmt = [math]::Round($used / 1MB)
     $freeFmt = [math]::Round($free / 1MB)
     $pageTotalFmt = [math]::Round($pageTotal / 1MB)
     $pageUsedFmt = [math]::Round($pageUsed / 1MB)
     $pageFreeFmt = [math]::Round($pageFree / 1MB)
+} else {
+    $totalFmt = [math]::Round($total / 1KB)
+    $usedFmt = [math]::Round($used / 1KB)
+    $freeFmt = [math]::Round($free / 1KB)
+    $pageTotalFmt = [math]::Round($pageTotal / 1KB)
+    $pageUsedFmt = [math]::Round($pageUsed / 1KB)
+    $pageFreeFmt = [math]::Round($pageFree / 1KB)
 }
 
 [PSCustomObject]@{

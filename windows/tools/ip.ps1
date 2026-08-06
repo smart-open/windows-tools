@@ -1,10 +1,6 @@
-<#
-.SYNOPSIS
-Show network interfaces (Linux ip style)
-#>
-
+# Show network interfaces (Linux ip style)
 param(
-    [switch]$a  # 显示所有接口
+    [switch]$a
 )
 
 $adapters = Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike '127.*' } | Group-Object InterfaceIndex

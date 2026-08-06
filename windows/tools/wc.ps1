@@ -1,14 +1,10 @@
-<#
-.SYNOPSIS
-Count lines, words, characters (Linux wc style)
-#>
-
+# Count lines, words, characters (Linux wc style)
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$File,
-    [switch]$l,  # 行数
-    [switch]$w,  # 单词数
-    [switch]$c   # 字符数
+    [switch]$l,
+    [switch]$w,
+    [switch]$c
 )
 
 $content = Get-Content $File -Raw

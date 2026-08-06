@@ -1,10 +1,6 @@
-<#
-.SYNOPSIS
-Show disk usage (Linux df style)
-#>
-
+# Show disk usage (Linux df style)
 param(
-    [switch]$h  # 人类可读格式
+    [switch]$h
 )
 
 $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Used -gt 0 -or $_.Free -gt 0 }

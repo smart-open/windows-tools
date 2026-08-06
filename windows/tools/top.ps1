@@ -1,17 +1,12 @@
-<#
-.SYNOPSIS
-Display top processes (Linux top style)
-#>
-
+# Display top processes (Linux top style)
 param(
-    [int]$n = 15  # 显示进程数
+    [int]$n = 15
 )
 
 Write-Host "Windows Task Manager - Top $n Processes"
 Write-Host "Time: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 Write-Host ""
 
-# 获取CPU和内存信息
 $os = Get-CimInstance Win32_OperatingSystem
 $cpu = Get-CimInstance Win32_Processor
 $memTotal = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)

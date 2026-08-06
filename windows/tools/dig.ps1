@@ -1,16 +1,12 @@
-<#
-.SYNOPSIS
-DNS lookup tool (Linux dig style - simplified)
-#>
-
+# DNS lookup tool (Linux dig style)
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$Domain,
-    [string]$Type = "A"  # 查询类型: A, AAAA, MX, NS, TXT, CNAME
+    [Parameter(Position = 1)]
+    [string]$Type = "A"
 )
 
-Write-Host "; <<>> Windows dig (simplified) <<>> $Domain $Type"
-Write-Host ";; Query time: (PowerShell DNS lookup)"
+Write-Host "; <<>> Windows dig <<>> $Domain $Type"
 Write-Host ";; SERVER: System DNS"
 Write-Host ""
 
@@ -64,7 +60,7 @@ try {
         }
         default {
             Write-Host "Unsupported type: $Type"
-            Write-Host "Supported types: A, AAAA, MX, NS, TXT, CNAME"
+            Write-Host "Supported: A, AAAA, MX, NS, TXT, CNAME"
         }
     }
 } catch {
@@ -72,4 +68,4 @@ try {
 }
 
 Write-Host ""
-Write-Host ";; Query completed at: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
+Write-Host ";; Query completed: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"

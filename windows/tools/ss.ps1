@@ -1,13 +1,9 @@
-<#
-.SYNOPSIS
-Show socket statistics (Linux ss style)
-#>
-
+# Show socket statistics (Linux ss style)
 param(
-    [switch]$t,  # TCP
-    [switch]$u,  # UDP
-    [switch]$l,  # 监听
-    [switch]$n   # 数字显示
+    [switch]$t,
+    [switch]$u,
+    [switch]$l,
+    [switch]$n
 )
 
 $params = @()

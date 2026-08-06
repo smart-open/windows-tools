@@ -1,10 +1,6 @@
-<#
-.SYNOPSIS
-Show command history (Linux history style)
-#>
-
+# Show command history (Linux history style)
 param(
-    [int]$n  # 显示最近N条
+    [int]$n
 )
 
 $history = Get-History

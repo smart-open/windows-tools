@@ -1,12 +1,8 @@
-<#
-.SYNOPSIS
-Display file contents (Linux cat style)
-#>
-
+# Display file contents (Linux cat style)
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$File,
-    [switch]$n  # 显示行号
+    [switch]$n
 )
 
 if ($n) {

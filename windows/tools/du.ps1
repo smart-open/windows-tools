@@ -1,13 +1,9 @@
-<#
-.SYNOPSIS
-Disk usage (Linux du style)
-#>
-
+# Disk usage (Linux du style)
 param(
     [string]$Path = ".",
-    [switch]$h,  # 人类可读
-    [switch]$s,  # 汇总
-    [int]$d = 2  # 深度
+    [switch]$h,
+    [switch]$s,
+    [int]$d = 2
 )
 
 function Format-Size($bytes) {
@@ -20,18 +16,12 @@ function Format-Size($bytes) {
 
 if ($s) {
     $total = (Get-ChildItem -Path $Path -Recurse -File | Measure-Object Length -Sum).Sum
-    if ($h) {
-        Write-Host "$(Format-Size $total) $Path"
-    } else {
-        Write-Host "$total $Path"
-    }
+    if ($h) { Write-Host "$(Format-Size $total) $Path" }
+    else { Write-Host "$total $Path" }
 } else {
     Get-ChildItem -Path $Path -Directory -Depth $d | ForEach-Object {
         $size = (Get-ChildItem -Path $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Measure-Object Length -Sum).Sum
-        if ($h) {
-            Write-Host "$(Format-Size $size) $($_.FullName)"
-        } else {
-            Write-Host "$size $($_.FullName)"
-        }
+        if ($h) { Write-Host "$(Format-Size $size) $($_.FullName)" }
+        else { Write-Host "$size $($_.FullName)" }
     }
 }

@@ -1,17 +1,12 @@
-<#
-.SYNOPSIS
-Show network connections (Linux netstat style)
-#>
-
+# Show network connections (Linux netstat style)
 param(
-    [switch]$t,  # TCP连接
-    [switch]$u,  # UDP连接
-    [switch]$l,  # 监听端口
-    [switch]$n,  # 数字显示
-    [switch]$p   # 显示进程
+    [switch]$t,
+    [switch]$u,
+    [switch]$l,
+    [switch]$n,
+    [switch]$p
 )
 
-# 使用Windows自带netstat
 $params = @()
 if ($t) { $params += "-t" }
 if ($u) { $params += "-u" }
