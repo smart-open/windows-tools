@@ -1,6 +1,6 @@
 # Linux 实用脚本集合
 
-本目录包含15个运维实用脚本，涵盖系统监控、备份、安全审计、部署管理等多个领域。
+本目录包含17个运维实用脚本，涵盖系统监控、备份、安全审计、部署管理、Docker基础设施等多个领域。
 
 ---
 
@@ -60,6 +60,13 @@
 |------|------|---------|
 | **log_analyzer.sh** | 日志分析器 | Auth/Nginx/系统日志分析、HTML报告生成 |
 | **error_summary.sh** | 错误汇总告警 | 多日志聚合、统计报表、邮件告警 |
+
+### 🐳 Docker基础设施类
+
+| 脚本 | 功能 | 主要特性 |
+|------|------|---------|
+| **docker_install.sh** | Docker自动安装 | CentOS/Ubuntu自动检测、最新版安装、中国镜像源支持 |
+| **docker_compose_deploy.sh** | 基础设施一键部署 | 25+组件模板、单机/集群模式、预设方案、统一数据卷管理 |
 
 ---
 
@@ -261,6 +268,90 @@ Docker资源清理
 # 过去1小时汇总，超过10个错误发邮件
 ./error_summary.sh -t 1h -e admin@example.com -a 10
 ```
+
+---
+
+### docker_install.sh
+自动安装最新版Docker Engine和Docker Compose（支持CentOS/Ubuntu）
+
+```bash
+# 快速安装（默认官方源）
+sudo ./docker_install.sh -y
+
+# 使用中国镜像源安装
+sudo ./docker_install.sh -y --mirror china
+
+# 交互式安装
+sudo ./docker_install.sh
+```
+
+功能特性：
+- 自动检测CentOS/RHEL/Ubuntu/Debian
+- 自动查询最新Docker版本
+- 支持阿里云中国镜像源
+- 自动配置daemon.json（日志轮转、overlay2）
+- 自动添加用户到docker组
+
+---
+
+### docker_compose_deploy.sh
+通过Docker Compose一键部署25+基础设施组件
+
+```bash
+# 查看所有可用组件
+./docker_compose_deploy.sh list
+
+# 交互式部署（显示菜单和预设方案）
+./docker_compose_deploy.sh deploy
+
+# 指定组件部署
+./docker_compose_deploy.sh deploy redis,mysql,postgresql,minio
+
+# Redis哨兵模式 + MongoDB副本集
+./docker_compose_deploy.sh deploy redis:sentinel,mysql,mongodb:rs
+
+# 启动/停止/查看状态
+./docker_compose_deploy.sh up
+./docker_compose_deploy.sh down
+./docker_compose_deploy.sh status
+
+# 查看日志
+./docker_compose_deploy.sh logs redis
+
+# 查看部署信息和凭据
+./docker_compose_deploy.sh info
+
+# 清理所有容器和数据
+./docker_compose_deploy.sh clean
+```
+
+**预设方案（交互模式输入字母即可）：**
+- `dev-minimal`: redis, mysql, minio
+- `dev-full`: redis, mysql, postgresql, mongodb, minio, nacos, rabbitmq, kafka, zookeeper
+- `monitoring`: prometheus, grafana, loki
+- `elk`: elasticsearch, kibana, logstash
+- `all-databases`: redis, mysql, postgresql, mongodb
+- `all-mq`: rabbitmq, kafka, rocketmq, zookeeper, pulsar
+
+**支持的组件（25个）：**
+
+| 类别 | 组件 | 版本 |
+|------|------|------|
+| 数据库 | Redis, MySQL, PostgreSQL, MongoDB | 8.0, 8.4 LTS, 17, 8.0 |
+| 搜索 | Elasticsearch, OpenSearch | 8.19, 2.19 |
+| 存储 | MinIO | latest |
+| 消息队列 | RabbitMQ, Kafka, RocketMQ, Pulsar | 4.3, 8.3, 5.5, 4.2 |
+| 协调 | ZooKeeper | 3.9 |
+| 网关 | OpenResty, Kong | 1.27, 3.9 |
+| 监控 | Prometheus, Grafana, Loki, SkyWalking | 3.13, 12.4, 3.7, 10.4 |
+| 日志 | Logstash, Kibana | 8.19 |
+| 安全 | Keycloak, Sentinel | 26.6, 1.8 |
+| 调度 | XXL-Job, PowerJob | 3.4, 5.1 |
+| 注册中心 | Nacos | 3.2 |
+
+**Redis部署模式：** standalone（单机）、sentinel（哨兵1主2从1哨兵）、cluster（6节点集群）
+**MongoDB部署模式：** standalone（单机）、rs（1主2从副本集）
+**数据卷统一挂载：** `~/docker-stack/data/` 目录下
 
 ---
 
