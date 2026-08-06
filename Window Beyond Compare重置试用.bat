@@ -4,7 +4,7 @@ cls
 setlocal enabledelayedexpansion
 
 :: ============================================================================
-:: Beyond Compare 重置试用工具 v2.0
+:: Beyond Compare 重置试用工具 v2.1
 :: 功能：重置 Beyond Compare 4.x/5.x 试用期限
 :: 使用：以管理员权限运行
 :: ============================================================================
@@ -12,7 +12,16 @@ setlocal enabledelayedexpansion
 title Beyond Compare 试用重置工具
 
 echo ============================================
-echo    Beyond Compare 试用重置工具
+echo    Beyond Compare 试用重置工具 v2.1
+echo ============================================
+echo.
+echo 【使用说明】
+echo   1. 右键以管理员身份运行本脚本
+echo   2. 脚本自动清除注册表中的试用标记
+echo   3. 自动搜索并启动 Beyond Compare 程序
+echo   4. 支持版本：Beyond Compare 4.x / 5.x
+echo   5. 重置后试用期重新计算为30天
+echo.
 echo ============================================
 echo.
 
@@ -73,7 +82,7 @@ echo [3/3] 正在启动程序...
 if defined bc_path (
     echo.
     echo ============================================
-    echo 成功：试用期已重置！
+    echo 成功：试用期已重置为30天！
     echo 路径：!bc_path!
     echo ============================================
     start "" "!bc_path!"
@@ -81,7 +90,7 @@ if defined bc_path (
     echo.
     echo ============================================
     echo 警告：未找到 Beyond Compare 安装路径
-    echo 提示：请手动启动程序
+    echo 提示：注册表已清理，请手动启动程序
     echo ============================================
 )
 
