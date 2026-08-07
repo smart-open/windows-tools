@@ -35,6 +35,13 @@ echo   9. 关闭剪贴板同步
 echo  10. 关闭位置服务
 echo  11. 关闭广告ID
 echo  12. 优化资源管理器
+echo  13. 性能优化设置
+echo  14. 隐私深度优化
+echo  15. 安全增强设置
+echo  16. 网络优化设置
+echo  17. 系统服务优化
+echo  18. Microsoft Edge优化
+echo  19. 电源计划优化
 echo.
 echo ========================================
 echo.
@@ -268,6 +275,207 @@ reg delete "HKCR\lnkfile" /v "IsShortcut" /f >nul 2>&1
 echo [√] 资源管理器已优化
 
 :: ========================================
+::          13. 性能优化设置
+:: ========================================
+echo.
+echo [14/20] 正在优化性能设置...
+:: 关闭Windows动画效果
+reg add "HKCU\Control Panel\Desktop" /v "UserPreferencesMask" /t REG_BINARY /d 9012038010000000 /f >nul 2>&1
+reg add "HKCU\Control Panel\Desktop\WindowMetrics" /v "MinAnimate" /t REG_SZ /d 0 /f >nul 2>&1
+
+:: 禁用透明效果
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v "EnableTransparency" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用启动延迟
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management\PrefetchParameters" /v "EnablePrefetcher" /t REG_DWORD /d 2 /f >nul 2>&1
+
+:: 禁用超级预读（SysMain）
+sc stop SysMain >nul 2>&1
+sc config SysMain start= disabled >nul 2>&1
+
+:: 禁用系统休眠
+powercfg -h off >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Power" /v "HiberbootEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 关闭分页清理
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Memory Management" /v "ClearPageFileAtShutdown" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 启动和故障恢复 - 加快启动速度
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager" /v "SetupExecute" /t REG_MULTI_SZ /d "" /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control" /v "WaitToKillServiceTimeout" /t REG_SZ /d "5000" /f >nul 2>&1
+reg add "HKCU\Control Panel\Desktop" /v "WaitToKillAppTimeout" /t REG_SZ /d "2000" /f >nul 2>&1
+reg add "HKCU\Control Panel\Desktop" /v "HungAppTimeout" /t REG_SZ /d "1000" /f >nul 2>&1
+reg add "HKCU\Control Panel\Desktop" /v "AutoEndTasks" /t REG_SZ /d "1" /f >nul 2>&1
+
+:: 禁用内存转储
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\CrashControl" /v "CrashDumpEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+echo [√] 性能设置已优化
+
+:: ========================================
+::          14. 隐私深度优化
+:: ========================================
+echo.
+echo [15/20] 正在进行隐私深度优化...
+:: 禁用搜索中的Web搜索
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Search" /v "BingSearchEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Search" /v "CortanaConsent" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Search" /v "AllowSearchToUseLocation" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用Cortana
+reg add "HKLM\Software\Policies\Microsoft\Windows\Windows Search" /v "AllowCortana" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Cortana" /v "CortanaEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用语音激活
+reg add "HKCU\Software\Microsoft\Speech_OneCore\Settings\VoiceActivation" /v "VoiceActivationEnableWhenUserSaysHeyCortana" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用墨迹和打字诊断
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Privacy" /v "AllowTailoredExperiences" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\Software\Policies\Microsoft\Windows\TabletPC" /v "PreventHandwritingDataSharing" /t REG_DWORD /d 1 /f >nul 2>&1
+
+:: 禁用查找我的设备
+reg add "HKLM\Software\Policies\Microsoft\FindMyDevice" /v "AllowFindMyDevice" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用输入个性化（文本建议、自动更正）
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Settings\EnableIMEPersonalizedLearning" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Personalization\Settings" /v "AcceptedPrivacyPolicy" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用应用建议
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SystemPaneSuggestionsEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SoftLandingEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "ContentDeliveryAllowed" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" /v "SubscribedContent-310093Enabled" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用开始菜单建议
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v "Start_IrisRecommendations" /t REG_DWORD /d 0 /f >nul 2>&1
+echo [√] 隐私深度优化完成
+
+:: ========================================
+::          15. 安全增强设置
+:: ========================================
+echo.
+echo [16/20] 正在增强安全设置...
+:: 禁用SMB 1.0协议
+sc stop LanmanServer >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters" /v "SMB1" /t REG_DWORD /d 0 /f >nul 2>&1
+dism /online /disable-feature /featurename:SMB1Protocol /norestart >nul 2>&1
+
+:: 禁用NetBIOS over TCP/IP (需要管理员权限，部分系统可能不生效)
+reg add "HKLM\SYSTEM\CurrentControlSet\Services\NetBT\Parameters\Interfaces" /v "NetbiosOptions" /t REG_DWORD /d 2 /f >nul 2>&1
+
+:: 禁用LLMNR协议
+reg add "HKLM\Software\Policies\Microsoft\Windows NT\DNSClient" /v "EnableMulticast" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用远程协助
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Remote Assistance" /v "fAllowToGetHelp" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Remote Assistance" /v "fAllowFullControl" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用远程桌面（默认禁用）
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Terminal Server" /v "fDenyTSConnections" /t REG_DWORD /d 1 /f >nul 2>&1
+sc stop TermService >nul 2>&1
+sc config TermService start= disabled >nul 2>&1
+
+:: 禁用远程注册表服务
+sc stop RemoteRegistry >nul 2>&1
+sc config RemoteRegistry start= disabled >nul 2>&1
+
+:: 禁用远程管理
+reg add "HKLM\Software\Policies\Microsoft\Windows\WinRM\Service" /v "AllowAutoConfig" /t REG_DWORD /d 0 /f >nul 2>&1
+sc stop WinRM >nul 2>&1
+sc config WinRM start= disabled >nul 2>&1
+
+:: 禁用自动播放/自动运行
+reg add "HKLM\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v "NoDriveTypeAutoRun" /t REG_DWORD /d 255 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer" /v "NoDriveTypeAutoRun" /t REG_DWORD /d 255 /f >nul 2>&1
+echo [√] 安全增强设置完成
+
+:: ========================================
+::          16. 网络优化设置
+:: ========================================
+echo.
+echo [17/20] 正在优化网络设置...
+:: 限制可保留带宽
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Psched" /v "NonBestEffortLimit" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 关闭无线网络适配器电源管理
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\0001" /v "PnPCapabilities" /t REG_DWORD /d 24 /f >nul 2>&1
+reg add "HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e972-e325-11ce-bfc1-08002be10318}\0002" /v "PnPCapabilities" /t REG_DWORD /d 24 /f >nul 2>&1
+
+:: 禁用WiFi感知
+reg add "HKLM\Software\Microsoft\WcmSvc\wifinetworkmanager\config" /v "AutoConnectAllowedOEM" /t REG_DWORD /d 0 /f >nul 2>&1
+echo [√] 网络设置已优化
+
+:: ========================================
+::          17. 系统服务优化
+:: ========================================
+echo.
+echo [18/20] 正在优化系统服务...
+:: 禁用传真服务
+sc stop Fax >nul 2>&1
+sc config Fax start= disabled >nul 2>&1
+
+:: 禁用家庭组服务
+sc stop HomeGroupProvider >nul 2>&1
+sc config HomeGroupProvider start= disabled >nul 2>&1
+sc stop HomeGroupListener >nul 2>&1
+sc config HomeGroupListener start= disabled >nul 2>&1
+
+:: 禁用诊断服务
+sc stop WerSvc >nul 2>&1
+sc config WerSvc start= disabled >nul 2>&1
+
+:: 禁用Windows错误报告
+reg add "HKLM\Software\Microsoft\Windows\Windows Error Reporting" /v "Disabled" /t REG_DWORD /d 1 /f >nul 2>&1
+
+:: 禁用客户体验改善计划
+reg add "HKLM\Software\Policies\Microsoft\SQMClient\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKLM\Software\Microsoft\SQMClient\Windows" /v "CEIPEnable" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用生物识别服务（如非笔记本）
+sc stop WbioSrvc >nul 2>&1
+sc config WbioSrvc start= disabled >nul 2>&1
+
+:: 禁用蓝牙服务（如不用蓝牙）
+sc stop BthServ >nul 2>&1
+sc config BthServ start= disabled >nul 2>&1
+echo [√] 系统服务已优化
+
+:: ========================================
+::          18. 微软Edge优化
+:: ========================================
+echo.
+echo [19/20] 正在优化Microsoft Edge...
+:: 禁用Edge启动加速
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v "StartupBoostEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+reg add "HKCU\Software\Microsoft\Edge\Main" /v "StartupBoostEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用Edge后台运行
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v "BackgroundModeEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用Edge搜索建议
+reg add "HKCU\Software\Microsoft\Edge\SmartScreenEnabled" /v "" /t REG_DWORD /d 0 /f >nul 2>&1
+
+:: 禁用Edge数据收集
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Edge" /v "MetricsReportingEnabled" /t REG_DWORD /d 0 /f >nul 2>&1
+echo [√] Microsoft Edge已优化
+
+:: ========================================
+::          19. 电源计划优化
+:: ========================================
+echo.
+echo [20/20] 正在优化电源计划...
+:: 设置高性能电源计划
+powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c >nul 2>&1
+
+:: 关闭硬盘自动休眠
+powercfg /change disk-timeout-ac 0 >nul 2>&1
+powercfg /change disk-timeout-dc 0 >nul 2>&1
+
+:: 关闭USB选择性挂起
+powercfg /change standby-timeout-ac 0 >nul 2>&1
+powercfg /change hibernate-timeout-ac 0 >nul 2>&1
+echo [√] 电源计划已优化
+
+:: ========================================
 ::          重启 Explorer
 :: ========================================
 echo.
@@ -297,6 +505,13 @@ echo   √ 剪贴板同步已关闭
 echo   √ 位置服务已关闭
 echo   √ 广告ID已关闭
 echo   √ 资源管理器已优化
+echo   √ 性能设置已优化
+echo   √ 隐私深度优化完成
+echo   √ 安全增强设置完成
+echo   √ 网络设置已优化
+echo   √ 系统服务已优化
+echo   √ Microsoft Edge已优化
+echo   √ 电源计划已优化
 echo.
 echo [!] 建议重启电脑使所有设置完全生效
 echo.
